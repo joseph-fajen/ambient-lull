@@ -19,7 +19,7 @@ All changes apply live, from the next note (drone volume applies immediately).
 | Control | What it does |
 | --- | --- |
 | Key | Any of the 12 roots. The pitch range stays centred near middle C in every key. |
-| Cycle keys | When on, moves the key up a fifth every 30 s while playing (C → G → D … → F → C). Picking a key by hand restarts the countdown. Off by default. |
+| Cycle keys | When on, moves the key up a fifth while playing (C → G → D … → F → C). The slider sets how often: every 10 s to 2 min (default 30 s). Picking a key by hand restarts the countdown. Off by default. |
 | Scale | Major pentatonic (default), minor pentatonic, major, natural minor, Dorian, Lydian, Japanese In. |
 | Tempo | 20–120 BPM, one note per beat. Notes ring for about 8 s at 20 BPM, down to 2.5 s at 120 BPM. |
 | Sound | Soft (sine), Warm (triangle, default), Hollow (square), Bright (sawtooth), volume-matched. |
@@ -41,6 +41,7 @@ These cover the pure logic: scales and keys, the melody walk (a sweep of every k
 
 - the waveforms are volume-matched
 - notes and the drone start and end without clicks
+- the drone changes key without a pop
 - the drone sits under the melody in every key at default volume, and about 10 dB louder than the melody at full volume
 - the peak stays below 1.0 in the worst case
 - the output is silent after Stop

@@ -19,7 +19,7 @@ const throwingStorage = {
   setItem() { throw new Error('denied'); },
 };
 
-const MINE = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.3, tempo: 72, drone: false, droneVolume: 0.8, autoKey: true };
+const MINE = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.3, tempo: 72, drone: false, droneVolume: 0.8, autoKey: true, keyCycleSeconds: 60 };
 
 const withSlots = slots => fakeStorage({ [STORAGE_KEY]: JSON.stringify({ version: 1, slots }) });
 

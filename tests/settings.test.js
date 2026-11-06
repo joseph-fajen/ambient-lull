@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULT_SETTINGS, WAVEFORMS, TONE_MIN, TONE_MAX, normalizeSettings } from '../src/settings.js';
+import { DEFAULT_SETTINGS, WAVEFORMS, TONE_MIN, TONE_MAX, KEY_CYCLE_MIN, KEY_CYCLE_MAX, normalizeSettings } from '../src/settings.js';
 import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX } from '../src/music.js';
 
 test('defaults are valid and point at real table entries', () => {
@@ -17,7 +17,7 @@ test('waveforms table: four built-in types, each with a mood name', () => {
 });
 
 test('a complete valid object comes back unchanged', () => {
-  const s = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true };
+  const s = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true, keyCycleSeconds: 45 };
   assert.deepEqual(normalizeSettings(s), s);
 });
 
@@ -27,7 +27,7 @@ test('missing fields get defaults', () => {
 });
 
 test('unknown values fall back to defaults', () => {
-  const s = normalizeSettings({ key: 'H', scale: 'bebop', waveform: 'noise', tone: 'bright', tempo: 'fast', drone: 'yes', droneVolume: 'loud', autoKey: 'sometimes' });
+  const s = normalizeSettings({ key: 'H', scale: 'bebop', waveform: 'noise', tone: 'bright', tempo: 'fast', drone: 'yes', droneVolume: 'loud', autoKey: 'sometimes', keyCycleSeconds: 'often' });
   assert.deepEqual(s, DEFAULT_SETTINGS);
 });
 
@@ -72,4 +72,13 @@ test('key cycling is a true/false setting, off by default', () => {
   assert.equal(DEFAULT_SETTINGS.autoKey, false);
   assert.equal(normalizeSettings({ autoKey: true }).autoKey, true);
   for (const junk of [1, 'true', null]) assert.equal(normalizeSettings({ autoKey: junk }).autoKey, false);
+});
+
+test('key cycle period: 10 s to 2 min, default 30 s, clamped', () => {
+  assert.equal(DEFAULT_SETTINGS.keyCycleSeconds, 30);
+  assert.equal(KEY_CYCLE_MIN, 10);
+  assert.equal(KEY_CYCLE_MAX, 120);
+  assert.equal(normalizeSettings({ keyCycleSeconds: 1 }).keyCycleSeconds, 10);
+  assert.equal(normalizeSettings({ keyCycleSeconds: 999 }).keyCycleSeconds, 120);
+  assert.equal(normalizeSettings({ keyCycleSeconds: NaN }).keyCycleSeconds, 30);
 });

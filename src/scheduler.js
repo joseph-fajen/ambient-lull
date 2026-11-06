@@ -56,21 +56,22 @@ export function createTransport() {
   };
 }
 
-// Key cycling: says when it's time to move to the next key. The clock is passed in.
-export const KEY_CYCLE_SECONDS = 30;
-
-export function createKeyCycle(period = KEY_CYCLE_SECONDS) {
-  let next = null; // when the next change is due (null: not started)
+// Key cycling: says when it's time to move to the next key. The clock and the period
+// are passed in on every call, so a period change applies straight away and keeps the
+// time already waited.
+export function createKeyCycle() {
+  let last = null; // when the countdown last (re)started (null: not started)
   return {
     // Start the countdown afresh: on Start, when cycling is switched on, or after
     // the key is changed by hand.
     reset(now) {
-      next = now + period;
+      last = now;
     },
-    // True once each period. After a clock jump, fires once and restarts the countdown.
-    due(now) {
-      if (next === null || now < next) return false;
-      next = now - next >= period ? now + period : next + period;
+    // True once each period. Each change restarts the countdown from that moment, so
+    // every key gets a full period, even after a late tick or a clock jump.
+    due(now, period) {
+      if (last === null || now < last + period) return false;
+      last = now;
       return true;
     },
   };

@@ -35,7 +35,11 @@
     <select id="key"></select>
 
     <label for="auto-key">Cycle keys</label>
-    <div><input id="auto-key" type="checkbox"> <span class="hint">round the circle of fifths, every 30 s</span></div>
+    <div class="range">
+      <input id="auto-key" type="checkbox">
+      <input id="key-cycle" type="range" step="5" aria-label="Seconds between key changes">
+      <output id="key-cycle-value" for="key-cycle"></output>
+    </div>
 
     <label for="scale">Scale</label>
     <select id="scale"></select>

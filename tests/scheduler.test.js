@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTransport, createKeyCycle, LOOKAHEAD, START_DELAY, KEY_CYCLE_SECONDS } from '../src/scheduler.js';
+import { createTransport, createKeyCycle, LOOKAHEAD, START_DELAY } from '../src/scheduler.js';
 import { createRandom } from '../src/music.js';
 
 const close = (a, b) => Math.abs(a - b) < 1e-9;
@@ -114,21 +114,24 @@ test('start while stopping begins a new run; the old fade finishing does not sto
   assert.ok(close(times[0], 1 + START_DELAY), 'the new run starts fresh');
 });
 
-// Fake clock: which ticks (every 50 ms) say a key change is due.
-function keyChanges(cycle, from, to) {
+// Fake clock: which ticks (every 50 ms) say a key change is due. `period(now)` gives
+// the current setting, so tests can change it mid-run.
+function keyChanges(cycle, from, to, period = () => 30) {
   const at = [];
   for (let i = Math.round(from * 20); i <= Math.round(to * 20); i++) {
     const now = i / 20;
-    if (cycle.due(now)) at.push(now);
+    if (cycle.due(now, period(now))) at.push(now);
   }
   return at;
 }
 
-test('key cycle: due every 30 seconds after reset', () => {
-  assert.equal(KEY_CYCLE_SECONDS, 30);
+test('key cycle: due once per period after reset', () => {
   const cycle = createKeyCycle();
   cycle.reset(10);
   assert.deepEqual(keyChanges(cycle, 10, 135), [40, 70, 100, 130]);
+  const fast = createKeyCycle();
+  fast.reset(0);
+  assert.deepEqual(keyChanges(fast, 0, 35, () => 10), [10, 20, 30]);
 });
 
 test('key cycle: never due before the first reset', () => {
@@ -143,10 +146,21 @@ test('key cycle: a reset (manual key change) restarts the countdown', () => {
   assert.deepEqual(keyChanges(cycle, 25.05, 90), [55, 85]);
 });
 
+test('key cycle: changing the period keeps the time already waited', () => {
+  // 20 s into a 30 s wait, switch to 15 s: change right away, then every 15 s.
+  const shorter = createKeyCycle();
+  shorter.reset(0);
+  assert.deepEqual(keyChanges(shorter, 0, 50, now => (now < 20 ? 30 : 15)), [20, 35, 50]);
+  // 20 s into a 30 s wait, switch to 60 s: the next change is at 60.
+  const longer = createKeyCycle();
+  longer.reset(0);
+  assert.deepEqual(keyChanges(longer, 0, 125, now => (now < 20 ? 30 : 60)), [60, 120]);
+});
+
 test('key cycle: a clock jump gives one change, not a burst', () => {
   const cycle = createKeyCycle();
   cycle.reset(0);
-  assert.equal(cycle.due(500), true);
-  assert.equal(cycle.due(500.05), false);
+  assert.equal(cycle.due(500, 30), true);
+  assert.equal(cycle.due(500.05, 30), false);
   assert.deepEqual(keyChanges(cycle, 500.1, 531), [530]);
 });

@@ -1,6 +1,6 @@
 // Shell: wires the UI to the composer (music.js), the timing (scheduler.js) and the
 // performer (audio.js).
-import { DEFAULT_SETTINGS, WAVEFORMS, TONE_MIN, TONE_MAX } from './settings.js';
+import { DEFAULT_SETTINGS, WAVEFORMS, TONE_MIN, TONE_MAX, KEY_CYCLE_MIN, KEY_CYCLE_MAX } from './settings.js';
 import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX, beatInterval, createComposer, dronePitch, nextKeyInCircle } from './music.js';
 import { playNote, createBus, startDrone } from './audio.js';
 import { createTransport, createKeyCycle } from './scheduler.js';
@@ -24,7 +24,7 @@ const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
 
 function tick() {
-  if (settings.autoKey && keyCycle.due(ctx.currentTime)) {
+  if (settings.autoKey && keyCycle.due(ctx.currentTime, settings.keyCycleSeconds)) {
     settings.key = nextKeyInCircle(settings.key);
     keySelect.value = settings.key; // applies from the next note, like a manual change
   }
@@ -90,6 +90,8 @@ const tempoSlider = document.getElementById('tempo');
 const tempoValue = document.getElementById('tempo-value');
 const droneToggle = document.getElementById('drone');
 const autoKeyToggle = document.getElementById('auto-key');
+const keyCycleSlider = document.getElementById('key-cycle');
+const keyCycleValue = document.getElementById('key-cycle-value');
 const droneVolumeSlider = document.getElementById('drone-volume');
 const waveformGroup = document.getElementById('waveform');
 const toneSlider = document.getElementById('tone');
@@ -108,6 +110,8 @@ waveformGroup.replaceChildren(...WAVEFORMS.map(w => {
 }));
 toneSlider.min = TONE_MIN;
 toneSlider.max = TONE_MAX;
+keyCycleSlider.min = KEY_CYCLE_MIN;
+keyCycleSlider.max = KEY_CYCLE_MAX;
 tempoSlider.min = TEMPO_MIN;
 tempoSlider.max = TEMPO_MAX;
 
@@ -119,6 +123,8 @@ function showSettings() {
   tempoValue.textContent = `${settings.tempo} BPM`;
   droneToggle.checked = settings.drone;
   autoKeyToggle.checked = settings.autoKey;
+  keyCycleSlider.value = settings.keyCycleSeconds;
+  keyCycleValue.textContent = `every ${settings.keyCycleSeconds} s`;
   droneVolumeSlider.value = settings.droneVolume;
   waveformGroup.querySelector(`input[value="${settings.waveform}"]`).checked = true;
   toneSlider.value = settings.tone;
@@ -135,6 +141,11 @@ keySelect.addEventListener('change', () => {
 autoKeyToggle.addEventListener('change', () => {
   settings.autoKey = autoKeyToggle.checked;
   restartKeyCycle();
+});
+// The countdown keeps the time already waited, so this doesn't restart it.
+keyCycleSlider.addEventListener('input', () => {
+  settings.keyCycleSeconds = Number(keyCycleSlider.value);
+  keyCycleValue.textContent = `every ${settings.keyCycleSeconds} s`;
 });
 scaleSelect.addEventListener('change', () => { settings.scale = scaleSelect.value; });
 tempoSlider.addEventListener('input', () => {

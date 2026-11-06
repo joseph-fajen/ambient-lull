@@ -14,6 +14,10 @@ export const WAVEFORMS = [
 export const TONE_MIN = 0;
 export const TONE_MAX = 1;
 
+// Seconds between key changes when cycling round the circle of fifths.
+export const KEY_CYCLE_MIN = 10; // the drone's crossfade takes 2 s, so not much shorter
+export const KEY_CYCLE_MAX = 120;
+
 export const DEFAULT_SETTINGS = Object.freeze({
   key: 'C',
   scale: 'major-pentatonic',
@@ -23,6 +27,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   drone: true,
   droneVolume: 0.33, // 0 (silent) to 1 (about 10 dB louder than the melody)
   autoKey: false, // cycle the key round the circle of fifths
+  keyCycleSeconds: 30,
 });
 
 const oneOf = (table, value, fallback) => (table.some(e => e.id === value) ? value : fallback);
@@ -43,5 +48,6 @@ export function normalizeSettings(input) {
     drone: typeof s.drone === 'boolean' ? s.drone : d.drone,
     droneVolume: number(s.droneVolume, 0, 1, d.droneVolume),
     autoKey: typeof s.autoKey === 'boolean' ? s.autoKey : d.autoKey,
+    keyCycleSeconds: number(s.keyCycleSeconds, KEY_CYCLE_MIN, KEY_CYCLE_MAX, d.keyCycleSeconds),
   };
 }

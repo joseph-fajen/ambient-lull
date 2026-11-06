@@ -149,6 +149,10 @@ tests/
 
 **Added after milestone 7:** a "Cycle keys" toggle (`autoKey`, default off, saved in presets). While playing, it moves the key up a fifth every 30 s on the audio clock; the change lands on the next note like a manual key change. A manual key change, switching it on, or loading a preset restarts the countdown. Tests: the circle visits all 12 keys and returns home; the countdown fires every 30 s, restarts on reset, and gives one change (not a burst) after a clock jump.
 
+**Fixed later:** a pop at key changes after the drone volume slider had been moved. The drone's fade and volume now use separate gain stages, and the fade no longer uses `cancelAndHoldAtTime`, which miscalculated after a volume glide. Audio check: no pop when the drone changes key, after slider moves and mid fade-in.
+
+**Added later:** a slider for how often Cycle keys changes key (`keyCycleSeconds`, 10–120 s, default 30, saved in presets). Changing it keeps the time already waited; each change restarts the countdown, so every key gets a full period.
+
 ### 5. Sound controls
 **Build:** the waveform picker (mood name plus technical name), volume matching for each waveform, and the tone slider with its limited range.
 **Audio checks:**
