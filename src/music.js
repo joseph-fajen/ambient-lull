@@ -106,25 +106,56 @@ export function harmonyNote(midi, settings, rng) {
   return choices.length ? choices[Math.floor(rng() * choices.length)] : null;
 }
 
+// Note lengths, in beats: the gap until the next note. `ring` scales how long the note
+// sounds (1 = noteLength at this tempo), so quick notes are shorter and held ones
+// longer. `weight` is how likely each is when a note varies from 1 beat. Half-beat
+// notes always come in pairs, so the melody lands back on the beat.
+export const NOTE_LENGTHS = [
+  { beats: 0.5, ring: 0.6, weight: 0.3 },
+  { beats: 1, ring: 1, weight: 0 },
+  { beats: 2, ring: 1.3, weight: 0.35 },
+  { beats: 3, ring: 1.5, weight: 0.15 },
+  { beats: 4, ring: 1.7, weight: 0.2 },
+];
+
+// Harmony notes always ring as long as the longest melody note, so they sustain
+// under the melody's rhythm instead of following it.
+const HARMONY_RING = Math.max(...NOTE_LENGTHS.map(l => l.ring));
+
+// A note's length in beats. Variety 0 is always 1 beat; at 1, every note varies.
+function pickBeats(variety, rng) {
+  if (!(rng() < variety)) return 1;
+  let r = rng() * NOTE_LENGTHS.reduce((sum, l) => sum + l.weight, 0);
+  for (const l of NOTE_LENGTHS) {
+    if ((r -= l.weight) < 0) return l.beats;
+  }
+  return NOTE_LENGTHS.at(-1).beats;
+}
+
 // The composer for one run: remembers the last note and reads the live settings
 // object for every new note, so changes apply from the next note on.
-// Harmony draws from its own random sequence, so the harmony amount never changes
-// the melody line itself.
+// Harmony and note lengths each draw from their own random sequence, so those
+// settings never change the melody line itself.
 export function createComposer(settings, rng) {
   let prev = null;
+  let halfPending = false; // the second note of a pair of half-beat notes is due
   const harmonyRng = createRandom(Math.floor(rng() * 2 ** 32));
+  const lengthRng = createRandom(Math.floor(rng() * 2 ** 32));
   return {
     next() {
       const note = nextNote(prev, settings, rng);
       prev = note.midi;
       const chance = (settings.harmony ?? 0) * HARMONY_CHANCE_MAX;
       const harmony = harmonyRng() < chance ? harmonyNote(note.midi, settings, harmonyRng) : null;
-      return { ...note, harmony };
+      const beats = halfPending ? 0.5 : pickBeats(settings.variety ?? 0, lengthRng);
+      halfPending = beats === 0.5 && !halfPending;
+      const ring = NOTE_LENGTHS.find(l => l.beats === beats).ring;
+      return { ...note, duration: note.duration * ring, beats, harmony, harmonyDuration: note.duration * HARMONY_RING };
     },
   };
 }
 
-// Seconds between notes (one note per beat).
+// Seconds per beat.
 export function beatInterval(bpm) {
   return 60 / clamp(bpm, TEMPO_MIN, TEMPO_MAX);
 }

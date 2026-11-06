@@ -39,19 +39,19 @@ export function createTransport() {
       if (state === 'stopping' && finishedRun === run) state = 'stopped';
     },
 
-    // Note times in [now, now + LOOKAHEAD). `interval()` gives the current seconds per
-    // beat; it is read for each new note, so tempo changes apply from the next note.
-    due(now, interval) {
-      if (state !== 'playing') return [];
-      const times = [];
+    // Note times in [now, now + LOOKAHEAD), handed out one at a time. `interval()`
+    // gives the seconds from the last note to the next. It's read only after the caller
+    // has handled the note before, so it can depend on that note's length, and tempo
+    // changes apply from the next note.
+    *due(now, interval) {
+      if (state !== 'playing') return;
       for (;;) {
         let next = lastTime === null ? firstTime : lastTime + interval();
         if (next < now) next = now; // clock jumped (tab slept): skip forward, no burst
-        if (next >= now + LOOKAHEAD) break;
-        times.push(next);
+        if (next >= now + LOOKAHEAD) return;
         lastTime = next;
+        yield next;
       }
-      return times;
     },
   };
 }

@@ -53,7 +53,7 @@ test('if the clock jumps ahead (tab slept), it skips forward instead of bursting
   const t = createTransport();
   t.start(0);
   const before = runClock(t, { from: 0, to: 5, step: () => 0.05, interval: () => 0.5 });
-  const burst = t.due(65, () => 0.5);
+  const burst = [...t.due(65, () => 0.5)];
   assert.ok(burst.length <= 1, `only one note right away, got ${burst.length}`);
   assert.ok(burst[0] >= 65, 'no notes in the past');
   const after = runClock(t, { from: 65.05, to: 70, step: () => 0.05, interval: () => 0.5 });
@@ -61,10 +61,29 @@ test('if the clock jumps ahead (tab slept), it skips forward instead of bursting
   assert.ok(before.length > 0);
 });
 
+test('each gap is read after the note before it has been handled (so it can depend on that note)', () => {
+  const t = createTransport();
+  t.start(0);
+  const pattern = [0.5, 0.5, 2, 1, 3, 0.5, 0.5, 4];
+  let i = 0;
+  let gap = null; // set by the "composer" for each note, before the next gap is read
+  const times = [];
+  for (let now = 0; now <= 40; now += 0.05) {
+    for (const time of t.due(now, () => gap)) {
+      times.push(time);
+      gap = pattern[i++ % pattern.length];
+    }
+  }
+  for (let n = 1; n < times.length; n++) {
+    assert.ok(close(times[n] - times[n - 1], pattern[(n - 1) % pattern.length]), `gap ${n}`);
+  }
+  assert.ok(times.length > 15);
+});
+
 test('states: stopped -> playing -> stopping -> stopped', () => {
   const t = createTransport();
   assert.equal(t.state, 'stopped');
-  assert.deepEqual(t.due(0, () => 1), [], 'nothing plays while stopped');
+  assert.deepEqual([...t.due(0, () => 1)], [], 'nothing plays while stopped');
 
   assert.equal(t.start(0), true);
   assert.equal(t.state, 'playing');
@@ -72,7 +91,7 @@ test('states: stopped -> playing -> stopping -> stopped', () => {
 
   assert.equal(t.stop(), true);
   assert.equal(t.state, 'stopping');
-  assert.deepEqual(t.due(1, () => 1), [], 'nothing new is scheduled while stopping');
+  assert.deepEqual([...t.due(1, () => 1)], [], 'nothing new is scheduled while stopping');
 
   t.finish(run);
   assert.equal(t.state, 'stopped');
@@ -110,7 +129,7 @@ test('start while stopping begins a new run; the old fade finishing does not sto
   t.finish(oldRun); // the old run's fade-out timer fires late
   assert.equal(t.state, 'playing', 'still playing');
 
-  const times = t.due(1, () => 1);
+  const times = [...t.due(1, () => 1)];
   assert.ok(close(times[0], 1 + START_DELAY), 'the new run starts fresh');
 });
 

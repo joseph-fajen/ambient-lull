@@ -17,6 +17,7 @@ let ctx = null;
 let bus = null; // the current run's output; a stopped run's bus fades out on its own
 let timer = null;
 let composer = null;
+let lastBeats = 1; // length of the last note booked, in beats: the gap before the next
 let drone = null; // the current drone voice, if any
 let droneMidi = null; // its pitch (null: no drone)
 
@@ -28,9 +29,11 @@ function tick() {
     settings.key = nextKeyInCircle(settings.key);
     keySelect.value = settings.key; // applies from the next note, like a manual change
   }
-  for (const time of transport.due(ctx.currentTime, () => beatInterval(settings.tempo))) {
+  for (const time of transport.due(ctx.currentTime, () => lastBeats * beatInterval(settings.tempo))) {
     updateDrone(time);
-    playWithHarmony(ctx, bus.input, time, composer.next(), settings);
+    const note = composer.next();
+    lastBeats = note.beats;
+    playWithHarmony(ctx, bus.input, time, note, settings);
   }
 }
 
@@ -50,6 +53,7 @@ async function start() {
   if (!transport.start(ctx.currentTime)) return; // already playing
   bus = createBus(ctx);
   composer = createComposer(settings, Math.random);
+  lastBeats = 1;
   drone = null;
   droneMidi = null;
   keyCycle.reset(ctx.currentTime);
@@ -96,6 +100,7 @@ const droneVolumeSlider = document.getElementById('drone-volume');
 const waveformGroup = document.getElementById('waveform');
 const toneSlider = document.getElementById('tone');
 const harmonySlider = document.getElementById('harmony');
+const varietySlider = document.getElementById('variety');
 
 const fillSelect = (select, table) => select.replaceChildren(...table.map(e => new Option(e.name, e.id)));
 fillSelect(keySelect, KEYS);
@@ -130,6 +135,7 @@ function showSettings() {
   waveformGroup.querySelector(`input[value="${settings.waveform}"]`).checked = true;
   toneSlider.value = settings.tone;
   harmonySlider.value = settings.harmony;
+  varietySlider.value = settings.variety;
 }
 
 // Restart the 30-second key countdown (on a manual key change, switching cycling on,
@@ -163,6 +169,7 @@ droneVolumeSlider.addEventListener('input', () => {
 waveformGroup.addEventListener('change', e => { settings.waveform = e.target.value; });
 toneSlider.addEventListener('input', () => { settings.tone = Number(toneSlider.value); });
 harmonySlider.addEventListener('input', () => { settings.harmony = Number(harmonySlider.value); });
+varietySlider.addEventListener('input', () => { settings.variety = Number(varietySlider.value); });
 showSettings();
 
 // Presets: 4 named slots. Loading applies live, like any other change.

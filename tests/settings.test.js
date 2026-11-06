@@ -17,7 +17,7 @@ test('waveforms table: four built-in types, each with a mood name', () => {
 });
 
 test('a complete valid object comes back unchanged', () => {
-  const s = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true, keyCycleSeconds: 45, harmony: 0.8 };
+  const s = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true, keyCycleSeconds: 45, harmony: 0.8, variety: 0.1 };
   assert.deepEqual(normalizeSettings(s), s);
 });
 
@@ -27,7 +27,7 @@ test('missing fields get defaults', () => {
 });
 
 test('unknown values fall back to defaults', () => {
-  const s = normalizeSettings({ key: 'H', scale: 'bebop', waveform: 'noise', tone: 'bright', tempo: 'fast', drone: 'yes', droneVolume: 'loud', autoKey: 'sometimes', keyCycleSeconds: 'often', harmony: 'lots' });
+  const s = normalizeSettings({ key: 'H', scale: 'bebop', waveform: 'noise', tone: 'bright', tempo: 'fast', drone: 'yes', droneVolume: 'loud', autoKey: 'sometimes', keyCycleSeconds: 'often', harmony: 'lots', variety: 'some' });
   assert.deepEqual(s, DEFAULT_SETTINGS);
 });
 
@@ -93,5 +93,13 @@ test('harmony runs 0 to 1, default 0.33, clamped', () => {
 
 test('an old preset without harmony loads with the default', () => {
   const old = { key: 'G', scale: 'dorian', waveform: 'sine', tone: 0.2, tempo: 30, drone: true, droneVolume: 0.5, autoKey: false, keyCycleSeconds: 30 };
-  assert.deepEqual(normalizeSettings(old), { ...old, harmony: 0.33 });
+  assert.deepEqual(normalizeSettings(old), { ...old, harmony: 0.33, variety: 0.5 });
+});
+
+test('variety runs 0 to 1, default 0.5, clamped', () => {
+  assert.equal(DEFAULT_SETTINGS.variety, 0.5);
+  assert.equal(normalizeSettings({ variety: 0 }).variety, 0);
+  assert.equal(normalizeSettings({ variety: 3 }).variety, 1);
+  assert.equal(normalizeSettings({ variety: -1 }).variety, 0);
+  assert.equal(normalizeSettings({ variety: NaN }).variety, 0.5);
 });

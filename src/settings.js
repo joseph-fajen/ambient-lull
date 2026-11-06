@@ -29,6 +29,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   autoKey: false, // cycle the key round the circle of fifths
   keyCycleSeconds: 30,
   harmony: 0.33, // 0 (never) to 1 (every other note, on average); the default is about 1 in 6
+  variety: 0.5, // note lengths: 0 (steady, one per beat) to 1 (every note varies)
 });
 
 const oneOf = (table, value, fallback) => (table.some(e => e.id === value) ? value : fallback);
@@ -51,5 +52,6 @@ export function normalizeSettings(input) {
     autoKey: typeof s.autoKey === 'boolean' ? s.autoKey : d.autoKey,
     keyCycleSeconds: number(s.keyCycleSeconds, KEY_CYCLE_MIN, KEY_CYCLE_MAX, d.keyCycleSeconds),
     harmony: number(s.harmony, 0, 1, d.harmony),
+    variety: number(s.variety, 0, 1, d.variety),
   };
 }

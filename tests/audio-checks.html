@@ -19,7 +19,7 @@
   <script type="module">
     import { playNote, playWithHarmony, createBus, startDrone, DRONE_FADE } from '../src/audio.js';
     import { DEFAULT_SETTINGS } from '../src/settings.js';
-    import { nextNote, beatInterval, createRandom, dronePitch, createComposer } from '../src/music.js';
+    import { nextNote, beatInterval, createRandom, dronePitch, createComposer, noteLength, NOTE_LENGTHS, TEMPO_MAX } from '../src/music.js';
     import { WAVEFORMS } from '../src/settings.js';
     import { LOOKAHEAD } from '../src/scheduler.js';
 
@@ -68,7 +68,8 @@
     // 1. No clicks: a single dry note starts and ends at near-zero volume.
     // Shortest note length (sharpest fades), brightest tone, lowest/middle/highest pitch.
     async function checkClicks() {
-      const start = 0.1, duration = 2.5, end = start + duration;
+      const shortest = noteLength(TEMPO_MAX) * Math.min(...NOTE_LENGTHS.map(l => l.ring));
+      const start = 0.1, duration = shortest, end = start + duration;
       let worstStart = 0, worstEnd = 0, worstAfter = 0;
       for (const w of WAVEFORMS) {
         for (const midi of [42, 60, 77]) {
@@ -87,37 +88,45 @@
       report(worstAfter < 1e-6, 'Silent after the note ends', `peak after end ${worstAfter.toExponential(1)}`);
     }
 
-    // Melody plus harmony notes from the composer, one per beat until `until`.
+    // Melody plus harmony notes from the composer until `until`, each note's length
+    // (in beats) setting the gap to the next, as in the app.
     function playMelody(ctx, destination, settings, seed, until) {
       const composer = createComposer(settings, createRandom(seed));
-      for (let t = 0.05; t < until; t += beatInterval(settings.tempo)) {
-        playWithHarmony(ctx, destination, t, composer.next(), settings);
+      for (let t = 0.05; t < until;) {
+        const note = composer.next();
+        playWithHarmony(ctx, destination, t, note, settings);
+        t += note.beats * beatInterval(settings.tempo);
       }
     }
 
     // 2. No distortion: a dense melody through the full bus (dry + reverb) never reaches 1.0.
-    // Harmony at full (a second note on about every other beat) is the worst case.
+    // Worst case: drone and harmony at full, brightest tone. Steady rhythm at 120 BPM is the
+    // loudest (measured), so it gets the most seeds; peaks vary a lot from seed to seed.
     async function checkPeak() {
-      let worst = { level: 0 };
+      const runs = [];
       for (const w of WAVEFORMS) {
-        for (const tempo of [120, 20]) {
-          for (const key of ['F#', 'F']) { // lowest and highest pitch ranges
-            for (const seed of [1, 2]) {
-              const settings = { key, scale: 'major-pentatonic', waveform: w.id, tone: 1, tempo, harmony: 1 };
-              const playFor = 20;
-              const buf = await render(playFor + 12, ctx => {
-                const bus = createBus(ctx);
-                startDrone(ctx, bus.dryInput, 0.05, dronePitch(key), 1); // loudest drone
-                playMelody(ctx, bus.input, settings, seed, playFor);
-              });
-              const level = peak(buf);
-              if (level > worst.level) worst = { level, label: `${w.mood} (${w.id}), ${tempo} BPM, key ${key}` };
-            }
-          }
+        for (const key of ['F#', 'F']) { // lowest and highest pitch ranges
+          for (let seed = 1; seed <= 6; seed++) runs.push({ w, key, seed, tempo: 120, variety: 0 });
+          runs.push({ w, key, seed: 1, tempo: 20, variety: 0 });
+          runs.push({ w, key, seed: 1, tempo: 120, variety: 1 });
+          runs.push({ w, key, seed: 2, tempo: 120, variety: 1 });
         }
       }
-      report(worst.level < 1, 'Peak stays below 1.0',
-        `loudest: ${worst.level.toFixed(3)} (${dB(worst.level)}) — ${worst.label}, brightest tone, drone and harmony at full`);
+      let worst = { level: 0 };
+      for (const { w, key, seed, tempo, variety } of runs) {
+        const settings = { key, scale: 'major-pentatonic', waveform: w.id, tone: 1, tempo, harmony: 1, variety };
+        const playFor = 20;
+        const buf = await render(playFor + 12, ctx => {
+          const bus = createBus(ctx);
+          startDrone(ctx, bus.dryInput, 0.05, dronePitch(key), 1); // loudest drone
+          playMelody(ctx, bus.input, settings, seed, playFor);
+        });
+        const level = peak(buf);
+        if (level > worst.level) worst = { level, label: `${w.mood} (${w.id}), ${tempo} BPM, key ${key}, rhythm ${variety}, seed ${seed}` };
+      }
+      report(worst.level < 0.9, 'Peak stays well below 1.0',
+        `loudest of ${runs.length} runs: ${worst.level.toFixed(3)} (${dB(worst.level)}) — ${worst.label}, brightest tone, ` +
+        `drone and harmony at full (limit 0.9, leaving room for unluckier runs)`);
     }
 
     // 2b. Harmony supports the melody rather than piling on: turning it up adds little
@@ -139,11 +148,36 @@
         `vs no harmony: +${atDefault.toFixed(2)} dB at default, +${atFull.toFixed(2)} dB at full (limits 1 dB, 1.5 dB)`);
     }
 
+    // 2c. Rhythm: varied lengths mean fewer notes on average, so it's a little quieter.
+    // Check it stays close to steady, at slow, default and fast tempos.
+    async function checkRhythmLoudness() {
+      const lines = [];
+      let worst = 0;
+      for (const tempo of [20, 40, 120]) {
+        const levelAt = async variety => {
+          let sum = 0;
+          for (const seed of [1, 2]) {
+            const settings = { ...DEFAULT_SETTINGS, tempo, variety };
+            const buf = await render(90, ctx => playMelody(ctx, createBus(ctx).input, settings, seed, 90));
+            sum += 20 * Math.log10(rms(buf, 10, 88));
+          }
+          return sum / 2;
+        };
+        const steady = await levelAt(0);
+        const diffs = [DEFAULT_SETTINGS.variety, 1].map(async v => (await levelAt(v)) - steady);
+        const [atDefault, atFull] = await Promise.all(diffs);
+        worst = Math.max(worst, Math.abs(atDefault), Math.abs(atFull));
+        lines.push(`${tempo} BPM: ${atDefault.toFixed(1)} dB at default, ${atFull.toFixed(1)} dB at full`);
+      }
+      report(worst <= 3, 'Varied rhythm stays close to steady in loudness',
+        `vs steady — ${lines.join('; ')} (limit 3 dB)`);
+    }
+
     // 3. Stop is clean: after the fade, the output (notes and reverb tail) is silent.
     // Notes are booked up to LOOKAHEAD past Stop, as the real timer loop would.
     async function checkStop() {
       const stopAt = 6;
-      const settings = { key: 'C', scale: 'major-pentatonic', waveform: 'sawtooth', tone: 1, tempo: 60, harmony: 1 };
+      const settings = { key: 'C', scale: 'major-pentatonic', waveform: 'sawtooth', tone: 1, tempo: 60, harmony: 1, variety: 1 };
       let fadeEnd;
       const buf = await render(stopAt + 12, ctx => {
         const bus = createBus(ctx);
@@ -171,19 +205,10 @@
         `first 5 ms reaches ${(worstStart * 100).toFixed(2)}% of its peak (limit 3%)`);
       report(worstAfter < 1e-6, 'Silent after the drone is released', `peak after ${worstAfter.toExponential(1)}`);
 
-      // Default sound (Warm, middle tone, 40 BPM, C), melody alone vs drone alone, through the bus.
-      const settings = { key: 'C', scale: 'major-pentatonic', waveform: 'triangle', tone: 0.5, tempo: 40 };
-      const melody = await render(30, ctx => {
-        const bus = createBus(ctx);
-        const rng = createRandom(5);
-        let prev = null;
-        for (let t = 0.05; t < 30; t += beatInterval(settings.tempo)) {
-          const note = nextNote(prev, settings, rng);
-          playNote(ctx, bus.input, t, note, settings);
-          prev = note.midi;
-        }
-      });
-      const melodyLevel = rms(melody, 8, 28);
+      // Default settings (with their harmony and rhythm), melody alone vs drone alone,
+      // through the bus. A longer stretch, since varied rhythm makes the level uneven.
+      const melody = await render(60, ctx => playMelody(ctx, createBus(ctx).input, DEFAULT_SETTINGS, 5, 60));
+      const melodyLevel = rms(melody, 8, 58);
       const gapsAt = async volume => {
         const gaps = [];
         for (const key of ['F#', 'C', 'F']) { // lowest, default and highest drone
@@ -273,6 +298,7 @@
       await checkDrone();
       await checkPeak();
       await checkHarmonyLoudness();
+      await checkRhythmLoudness();
       await checkStop();
     } catch (err) {
       report(false, 'Checks crashed', String(err));

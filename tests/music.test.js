@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   KEYS, SCALES, CENTER_MIDI, TEMPO_MIN, TEMPO_MAX, NOTE_LENGTH_MIN, NOTE_LENGTH_MAX,
   rootMidi, notePool, nextNote, noteLength, createRandom, createComposer, dronePitch, nextKeyInCircle,
-  harmonyNote, HARMONY_INTERVALS, HARMONY_CHANCE_MAX,
+  harmonyNote, HARMONY_INTERVALS, HARMONY_CHANCE_MAX, NOTE_LENGTHS,
 } from '../src/music.js';
 
 const settingsFor = (key, scale, tempo = 40) => ({ key, scale, tempo });
@@ -259,4 +259,104 @@ test('composer: harmony notes follow the live key and scale, and the melody walk
       if (i < 15) assert.equal(note.midi, plain.next().midi, 'harmony draws its own random numbers');
     }
   }
+});
+
+const ringFor = beats => NOTE_LENGTHS.find(l => l.beats === beats).ring;
+
+test('note lengths table: half a beat to 4 beats, quick notes ring shorter, held ones longer', () => {
+  assert.deepEqual(NOTE_LENGTHS.map(l => l.beats), [0.5, 1, 2, 3, 4]);
+  assert.equal(ringFor(1), 1, 'one beat rings as long as today');
+  for (let i = 1; i < NOTE_LENGTHS.length; i++) {
+    assert.ok(NOTE_LENGTHS[i].ring > NOTE_LENGTHS[i - 1].ring, 'longer notes ring longer');
+  }
+});
+
+test('variety 0 (or missing) is the steady sound: every note 1 beat, today\'s ring length', () => {
+  for (const variety of [0, undefined]) {
+    const composer = createComposer({ ...settingsFor('C', 'major'), variety }, createRandom(3));
+    for (let i = 0; i < 300; i++) {
+      const note = composer.next();
+      assert.equal(note.beats, 1);
+      assert.equal(note.duration, noteLength(40));
+    }
+  }
+});
+
+test('variety sweep: allowed lengths, ring matches, quick notes in pairs so the beat comes back', () => {
+  for (const variety of [0.2, 0.5, 1]) {
+    for (let seed = 1; seed <= 30; seed++) {
+      const rng = createRandom(seed);
+      const tempo = TEMPO_MIN + Math.floor(rng() * (TEMPO_MAX - TEMPO_MIN + 1));
+      const composer = createComposer({ ...settingsFor('G', 'dorian', tempo), variety }, rng);
+      let beatsSoFar = 0;
+      let halves = 0; // length of the current run of half-beat notes
+      for (let n = 0; n < 200; n++) {
+        const note = composer.next();
+        const label = `variety ${variety} seed ${seed} note ${n}`;
+        assert.ok(NOTE_LENGTHS.some(l => l.beats === note.beats), `${label}: ${note.beats} beats`);
+        assert.ok(Math.abs(note.duration - noteLength(tempo) * ringFor(note.beats)) < 1e-9, `${label}: ring`);
+        if (note.beats !== 0.5) assert.equal(halves % 2, 0, `${label}: half-beat notes come in pairs`);
+        halves = note.beats === 0.5 ? halves + 1 : 0;
+        beatsSoFar += note.beats;
+        if (halves % 2 === 0) assert.equal(beatsSoFar % 1, 0, `${label}: back on the beat`);
+      }
+    }
+  }
+});
+
+function lengthShares(variety, notes = 6000) {
+  const composer = createComposer({ ...settingsFor('C', 'major'), variety }, createRandom(11));
+  const counts = {};
+  for (let i = 0; i < notes; i++) {
+    const b = composer.next().beats;
+    counts[b] = (counts[b] ?? 0) + 1;
+  }
+  return Object.fromEntries(NOTE_LENGTHS.map(l => [l.beats, (counts[l.beats] ?? 0) / notes]));
+}
+
+test('variety amount: default mixes steady and varied notes; full has no plain 1-beat notes', () => {
+  const atDefault = lengthShares(0.5);
+  assert.ok(atDefault[1] > 0.3 && atDefault[1] < 0.6, `default: ${atDefault[1]} of notes are 1 beat`);
+  for (const l of NOTE_LENGTHS) assert.ok(atDefault[l.beats] > 0.03, `default uses ${l.beats} beats`);
+  const atFull = lengthShares(1);
+  assert.equal(atFull[1], 0);
+});
+
+test('variety changes apply from the next note (after finishing a pair of quick notes)', () => {
+  const settings = { ...settingsFor('C', 'major'), variety: 1 };
+  const composer = createComposer(settings, createRandom(5));
+  let last;
+  for (let i = 0; i < 50; i++) last = composer.next();
+  settings.variety = 0;
+  const next = composer.next();
+  if (last.beats === 0.5 && next.beats === 0.5) assert.equal(composer.next().beats, 1);
+  else assert.equal(next.beats, 1);
+  for (let i = 0; i < 20; i++) assert.equal(composer.next().beats, 1);
+});
+
+test('variety draws its own random numbers: the melody and harmony stay the same', () => {
+  for (let seed = 1; seed <= 20; seed++) {
+    const base = { ...settingsFor('Eb', 'lydian'), harmony: 0.5 };
+    const steady = createComposer({ ...base, variety: 0 }, createRandom(seed));
+    const varied = createComposer({ ...base, variety: 1 }, createRandom(seed));
+    for (let i = 0; i < 50; i++) {
+      const a = steady.next(), b = varied.next();
+      assert.equal(a.midi, b.midi);
+      assert.equal(a.harmony, b.harmony);
+    }
+  }
+});
+
+test('harmony notes always ring long (as a 4-beat note), whatever the melody note\'s length', () => {
+  const longest = Math.max(...NOTE_LENGTHS.map(l => l.ring));
+  const settings = { ...settingsFor('A', 'natural-minor', 90), harmony: 1, variety: 1 };
+  const composer = createComposer(settings, createRandom(4));
+  const melodyLengths = new Set();
+  for (let i = 0; i < 300; i++) {
+    const note = composer.next();
+    if (note.harmony === null) continue;
+    melodyLengths.add(note.beats);
+    assert.ok(Math.abs(note.harmonyDuration - noteLength(90) * longest) < 1e-9, `note ${i}`);
+  }
+  assert.ok(melodyLengths.has(0.5) && melodyLengths.has(4), 'covers quick and held melody notes');
 });

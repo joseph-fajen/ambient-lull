@@ -204,10 +204,25 @@ Features and fixes added after milestone 7, each built and tested the same way. 
 ### Harmony
 - A slider (`harmony`, 0–1, default 0.33, saved in presets). The chance that a note gets a harmony note is half the setting: about 1 in 6 at the default, every other note at full.
 - The harmony note is in the scale, a minor or major 3rd, a 4th or a 5th from the melody note. It goes above when there's room in the melody range, otherwise the same distance below, so it never leaves the range. Every note of every key × scale has at least one choice.
-- It starts with the melody note and lasts as long. It's played at 0.6 of the melody's level (`HARMONY_LEVEL` in `src/audio.js`, about 4.4 dB under the melody), chosen after measuring 0.6, 0.8 and 1.0.
+- It starts with the melody note. It always rings as long as a 4-beat note (see Note length variety below), at the user's request, so it sustains under the melody's rhythm instead of following it.
+- It's played at 0.5 of the melody's level (`HARMONY_LEVEL` in `src/audio.js`, about 6 dB under the melody). First measured at 0.6, 0.8 and 1.0 with harmony notes as long as the melody note; 0.6 was chosen. Once harmony rang long, 0.6 made the music too loud (+1.2 dB at the default), so it came down to 0.5.
 - Harmony draws its own random numbers, so moving the slider adds or removes harmony notes without changing the melody line.
 - Tests: the sweep above; the share of notes with harmony at 0, the default and full; old presets load with the default.
-- Audio checks: peak 0.856 with harmony and drone at full (was 0.812 without harmony); harmony makes the music +0.6 dB louder at the default and +0.9 dB at full.
+- Audio checks: harmony makes the music +0.9 dB louder at the default and +1.2 dB at full (limits 1 and 1.5 dB). For the peak, see below.
+
+### Note length variety (Rhythm)
+- A slider labelled Rhythm, Steady to Varied (`variety`, 0–1, default 0.5, saved in presets; old presets load with 0.5). At 0 it's the old sound exactly: one note per beat, each ringing `noteLength(tempo)`.
+- Each note varies from 1 beat with chance `variety`. A varied note is half a beat, 2, 3 or 4 beats, picked from `NOTE_LENGTHS` in `src/music.js` (weights 0.3, 0.35, 0.15, 0.2). Half-beat notes always come in pairs, so the melody lands back on the beat. At the default about 40% of notes are 1 beat.
+- Tempo still sets the pulse: at 40 BPM quick notes are 0.75 s apart and held ones up to 6 s.
+- Ring length goes with the gap: `noteLength(tempo)` × 0.6 for half a beat, up to × 1.7 for 4 beats.
+- The rhythm draws its own random numbers, so the slider doesn't change the melody line or the harmony.
+- The scheduler's `due()` now hands out note times one at a time (a generator), so the gap to the next note can depend on the note just composed.
+- Tests: the length table; Steady is the old sound; a sweep of allowed lengths, ring, pairs and staying on the beat; the shares at the default and full; live changes; separate random numbers; the scheduler reading each gap after the note before.
+- Audio checks: varied rhythm has fewer notes on average, so it's about 1.7 dB quieter at the default and up to 2.5 dB at full (limit 3 dB). Left as it is: sparser music being a little quieter sounds natural. The drone check now measures against the real default melody: the drone is about 9 dB under it, and about 10.3 dB over it at full.
+
+### Peak headroom, re-measured
+- Peaks vary a lot from one random run to the next. Over 48 runs, harmony at full took the worst case to 0.916 (0.810 without harmony), closer to 1.0 than the old 2-seed check had shown.
+- The overall output came down 0.7 dB (`MASTER_LEVEL` 0.65 → 0.6). The peak check now covers 72 runs, including varied rhythm, with a limit of 0.9 to leave room for unluckier runs. Worst now: 0.836.
 
 ### Listening checks for these
 - [ ] Drone slider: smooth glide, no zipper noise. At Loud, the drone takes over without harshness or distortion.
@@ -215,3 +230,7 @@ Features and fixes added after milestone 7, each built and tested the same way. 
 - [ ] Biggest register shifts: F to C and F♯ to D♭ (up to 7 semitones). Smooth, not jarring.
 - [ ] Harmony at default: occasional, gentle two-note moments; the melody still leads.
 - [ ] Harmony at Often, in Japanese In and Lydian: consonant every time, never muddy. Try the lowest key (F♯) with Dark tone too.
+- [ ] Rhythm at default and at Varied: runs of quick notes and long held ones that feel like phrasing, not stumbling. Steady sounds as before.
+- [ ] Rhythm at Varied, 20 BPM: 4-beat notes leave 12 s gaps. Spacious, not empty?
+- [ ] Rhythm at Varied, 120 BPM: quick pairs 0.25 s apart, with the soft 0.4 s fade-in. Still distinct notes, not a smear?
+- [ ] Harmony at Often with Rhythm at Varied: the long harmony notes sustain under quick runs without getting muddy.

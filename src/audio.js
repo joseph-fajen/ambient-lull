@@ -14,8 +14,9 @@ export const TONE_CUTOFF_MIN = 600; // Hz, tone = 0
 export const TONE_CUTOFF_MAX = 3200; // Hz, tone = 1 (kept low so sawtooth never gets harsh)
 export const REVERB_SECONDS = 4;
 export const DRY_LEVEL = 0.7;
-// Overall output level. Leaves headroom for the drone at full volume over the busiest melody.
-export const MASTER_LEVEL = 0.65;
+// Overall output level. Leaves headroom for the drone and harmony at full volume over the
+// busiest melody (measured over many seeds: worst about 0.85).
+export const MASTER_LEVEL = 0.6;
 export const WET_LEVEL = 0.5;
 export const STOP_FADE = 1.5; // seconds for Stop to fade to silence
 
@@ -64,13 +65,14 @@ export function playNote(ctx, destination, time, { midi, duration, level = 1 }, 
 }
 
 // A melody note from the composer, plus its harmony note if it has one. The harmony
-// is quieter, so it supports the melody instead of competing with it.
-export const HARMONY_LEVEL = 0.6;
+// is quieter, so it supports the melody instead of competing with it, and it always
+// rings long (its own length from the composer), whatever the melody's rhythm.
+export const HARMONY_LEVEL = 0.5;
 
 export function playWithHarmony(ctx, destination, time, note, settings) {
   playNote(ctx, destination, time, note, settings);
   if (note.harmony != null) {
-    playNote(ctx, destination, time, { midi: note.harmony, duration: note.duration, level: HARMONY_LEVEL }, settings);
+    playNote(ctx, destination, time, { midi: note.harmony, duration: note.harmonyDuration, level: HARMONY_LEVEL }, settings);
   }
 }
 

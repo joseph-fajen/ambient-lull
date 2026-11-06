@@ -21,10 +21,11 @@ All changes apply live, from the next note (drone volume applies immediately).
 | Key | Any of the 12 roots. The pitch range stays centred near middle C in every key. |
 | Cycle keys | When on, moves the key up a fifth while playing (C → G → D … → F → C). The slider sets how often: every 10 s to 2 min (default 30 s). Picking a key by hand restarts the countdown. Off by default. |
 | Scale | Major pentatonic (default), minor pentatonic, major, natural minor, Dorian, Lydian, Japanese In. |
-| Tempo | 20–120 BPM, one note per beat. Notes ring for about 8 s at 20 BPM, down to 2.5 s at 120 BPM. |
+| Tempo | 20–120 BPM: the length of a beat. A 1-beat note rings for about 8 s at 20 BPM, down to 2.5 s at 120 BPM. |
+| Rhythm | From Steady (one note per beat) to Varied. Varied notes last half a beat (always in pairs, so the melody lands back on the beat) up to 4 beats. Quick notes ring shorter and held notes longer. Default: in the middle, about half the notes 1 beat. |
 | Sound | Soft (sine), Warm (triangle, default), Hollow (square), Bright (sawtooth), volume-matched. |
 | Tone | A low-pass filter from Dark to Bright, limited so even Bright never gets harsh. |
-| Harmony | Now and then a second, quieter note sounds with the melody: a 3rd, 4th or 5th, always in the scale and inside the melody's range. The slider sets how often, from Never to Often (about every other note). Default: about 1 note in 6. |
+| Harmony | Now and then a second, quieter note sounds with the melody: a 3rd, 4th or 5th, always in the scale and inside the melody's range. Harmony notes always ring long, as long as a 4-beat note, whatever the melody's rhythm. The slider sets how often, from Never to Often (about every other note). Default: about 1 note in 6. |
 | Drone | A soft bass on the root, two octaves down (on by default). Key changes crossfade it. The slider sets its volume, from silent up to about 10 dB louder than the melody. |
 | Presets | 4 named slots. Save stores the current settings (asking first if the slot is filled); Load applies them live. Kept in the browser's localStorage. |
 
@@ -36,7 +37,7 @@ All changes apply live, from the next note (drone volume applies immediately).
 npm test
 ```
 
-These cover the pure logic: scales and keys, the melody walk (a sweep of every key × scale × 20 seeds, checking range, scale, step size and note length), harmony notes (in scale, in range and a 3rd, 4th or 5th away, for every note of every key × scale), tempo to note length, note timing and Start/Stop states with a fake clock, settings validation, and presets with fake and failing storage.
+These cover the pure logic: scales and keys, the melody walk (a sweep of every key × scale × 20 seeds, checking range, scale, step size and note length), harmony notes (in scale, in range and a 3rd, 4th or 5th away, for every note of every key × scale), note lengths (allowed lengths, quick notes in pairs, back on the beat), tempo to note length, note timing and Start/Stop states with a fake clock, settings validation, and presets with fake and failing storage.
 
 **Audio checks:** with the server running, open <http://localhost:8000/tests/audio-checks.html>. It renders sound offline (to numbers, not the speakers) and checks:
 
@@ -46,13 +47,14 @@ These cover the pure logic: scales and keys, the melody walk (a sweep of every k
 - the drone sits under the melody in every key at default volume, and about 10 dB louder than the melody at full volume
 - the peak stays below 1.0 in the worst case (drone and harmony at full)
 - harmony adds little loudness (under 1 dB at default)
+- varied rhythm stays within 3 dB of steady in loudness
 - the output is silent after Stop
 
 ## How it's built
 
 ```
 src/
-  music.js       composer (pure): keys, scales, circle of fifths, the melody walk, harmony notes, drone pitch, tempo → note length
+  music.js       composer (pure): keys, scales, circle of fifths, the melody walk, harmony notes, note lengths (rhythm), drone pitch, tempo → note length
   settings.js    the settings object (pure): defaults, waveform table, validation
   scheduler.js   timing (pure): which notes are due in the lookahead window; Start/Stop states; key-cycle countdown
   audio.js       performer: the note voice, harmony level, the drone, reverb, and each run's output chain
