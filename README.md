@@ -72,3 +72,8 @@ notes/           design thinking and the build plan
 - **Add a scale:** one line in `SCALES` in `src/music.js`, as a name plus intervals in semitones. It appears in the dropdown automatically.
 - **Tune the sound:** the constants at the top of `src/audio.js` (fade-in, note volume, tone range, reverb mix, Stop fade, per-waveform gains, drone's maximum level).
 - **After changing the sound, re-run the audio checks.** The per-waveform gains in particular were measured, so re-measure them if you change a voice.
+
+## Known limitations
+
+- Some browsers slow down timers in background tabs. If yours does, notes may come unevenly while the tab is hidden, though never in a burst when you return. Chrome doesn't slow down tabs that are playing audio.
+- The audio checks run in the browser only. There's no command-line runner yet.

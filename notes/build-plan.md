@@ -2,6 +2,8 @@
 
 How to build the toy described in `baseline-prompt-v2.md`, in order, with a check at each step. The *why* behind the decisions is in `design-thinking.md`.
 
+**Status (2026-11-05):** milestones 0–7 are built and on `main`, plus the extras in "After v1" at the end. Still to do: the listening sweep in milestone 7, and ticking the boxes.
+
 **How to use this:** build one milestone at a time. After each one, stop. Run the tests, do the listening check, and tick the box before moving on. The risky parts (timing, start/stop) come early, so they're proven before the easy parts pile on top.
 
 ---
@@ -139,19 +141,9 @@ tests/
 **Audio checks:**
 - [ ] No click when the drone starts; silent after it's released.
 - [ ] The peak stays below 1.0 with the drone playing under the worst-case melody.
-- [ ] The drone is quieter than the melody.
+- [ ] The drone is quieter than the melody (at its default volume).
 
-**Listen for:** a soft bass bed under the melody, never louder than it. Key changes glide between roots with no click. Toggling the drone fades it in or out on the next note.
-
-**Added after milestone 7:** a drone volume slider (`droneVolume`, 0–1, default 0.6, saved in presets). It applies immediately with a short glide, since it's a mix level rather than a note property. Audio check: at full volume the drone is no louder than the melody.
-
-**Changed later:** the drone's maximum was raised to about 10 dB louder than the melody, at the user's request. The overall output came down about 3.7 dB (`MASTER_LEVEL` 0.65) to keep the peak below 1.0, and the default slider position moved to 0.33 so the default drone level is unchanged.
-
-**Added after milestone 7:** a "Cycle keys" toggle (`autoKey`, default off, saved in presets). While playing, it moves the key up a fifth every 30 s on the audio clock; the change lands on the next note like a manual key change. A manual key change, switching it on, or loading a preset restarts the countdown. Tests: the circle visits all 12 keys and returns home; the countdown fires every 30 s, restarts on reset, and gives one change (not a burst) after a clock jump.
-
-**Fixed later:** a pop at key changes after the drone volume slider had been moved. The drone's fade and volume now use separate gain stages, and the fade no longer uses `cancelAndHoldAtTime`, which miscalculated after a volume glide. Audio check: no pop when the drone changes key, after slider moves and mid fade-in.
-
-**Added later:** a slider for how often Cycle keys changes key (`keyCycleSeconds`, 10–120 s, default 30, saved in presets). Changing it keeps the time already waited; each change restarts the countdown, so every key gets a full period.
+**Listen for:** a soft bass bed under the melody (at its default volume). Key changes glide between roots with no click. Toggling the drone fades it in or out on the next note.
 
 ### 5. Sound controls
 **Build:** the waveform picker (mood name plus technical name), volume matching for each waveform, and the tone slider with its limited range.
@@ -183,3 +175,33 @@ tests/
 - [ ] Defaults: a fresh page plus one press of Start sounds good, with no tweaking.
 - [ ] Remove the temporary "play one note" button.
 - [ ] Update the README.
+
+---
+
+## After v1
+
+Features and fixes added after milestone 7, each built and tested the same way. All are on `main`.
+
+### Drone volume
+- A slider next to the Drone toggle (`droneVolume`, 0–1, default 0.33, saved in presets). It applies immediately with a short glide, since it's a mix level rather than a note property.
+- At full volume the drone is about 10 dB louder than the melody, at the user's request. Its first maximum was level with the melody.
+- To keep the peak below 1.0, the overall output came down about 3.7 dB (`MASTER_LEVEL` 0.65 in `src/audio.js`). The default position keeps the default drone level unchanged, at about 9 dB under the melody.
+- Audio checks: about 10 dB louder than the melody at full volume; peak below 1.0 with the drone at full volume.
+
+### Cycle keys
+- A toggle (`autoKey`, default off) that moves the key up a fifth round the circle (C, G, D … F, C) while playing, on the audio clock.
+- A slider sets how often (`keyCycleSeconds`, 10–120 s, default 30). Both are saved in presets.
+- Each change lands on the next note, like a manual key change, and crossfades the drone.
+- A manual key change, switching it on, or loading a preset restarts the countdown. Changing the interval keeps the time already waited.
+- Each change restarts the countdown, so every key gets a full period, even after a clock jump (one change, not a burst).
+- Tests: the circle visits all 12 keys and returns home; the countdown timing, resets, interval changes and clock jumps, all with a fake clock.
+
+### Fix: pop at key changes
+- After the drone volume slider had been moved, a key change dropped the old drone to silence in under 2 ms. `cancelAndHoldAtTime` miscalculated the held value after a volume glide.
+- The drone now has separate gain stages for its fade and its volume. The fade's starting point is worked out directly instead of read back from the browser.
+- Audio check: no pop when the drone changes key, both after slider moves and mid fade-in. It fails on the old code.
+
+### Listening checks for these
+- [ ] Drone slider: smooth glide, no zipper noise. At Loud, the drone takes over without harshness or distortion.
+- [ ] Cycle keys at 10 s with the drone turned up: each key change glides, with no pop.
+- [ ] Biggest register shifts: F to C and F♯ to D♭ (up to 7 semitones). Smooth, not jarring.
