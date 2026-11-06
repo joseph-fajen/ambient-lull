@@ -190,7 +190,10 @@ function harpBuffer(ctx, midi) {
 }
 
 function harpSound(ctx, out, time, { midi, duration, peak }, { tone }) {
-  const env = struckEnvelope(ctx, time, duration, peak * 2.8, 30); // the string fades on its own
+  // A brighter pluck is spikier for the same loudness, so it plays a little quieter as
+  // Tone rises (about 1 dB at the brightest), keeping the loudest mix under the peak limit.
+  const gain = 2.8 * (1 - 0.12 * tone);
+  const env = struckEnvelope(ctx, time, duration, peak * gain, 30); // the string fades on its own
   const src = new AudioBufferSourceNode(ctx, { buffer: harpBuffer(ctx, midi) });
   src.connect(toneFilter(ctx, tone)).connect(env.input);
   env.output.connect(out);
