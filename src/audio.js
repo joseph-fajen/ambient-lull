@@ -15,8 +15,9 @@ export const TONE_CUTOFF_MAX = 3200; // Hz, tone = 1 (kept low so sawtooth never
 export const REVERB_SECONDS = 4;
 export const DRY_LEVEL = 0.7;
 // Overall output level. Leaves headroom for the drone and harmony at full volume over the
-// busiest melody, at full width (measured over many seeds: worst about 0.84).
-export const MASTER_LEVEL = 0.57;
+// busiest melody, at full width, in every sound (measured over many seeds). Lowered from
+// 0.57 when the struck sounds came in: their sharper starts took the worst peak to 0.895.
+export const MASTER_LEVEL = 0.54;
 export const WET_LEVEL = 0.5;
 export const STOP_FADE = 1.5; // seconds for Stop to fade to silence
 

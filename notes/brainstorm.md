@@ -85,6 +85,12 @@ Picked to spread across the things a listener hears first: how a note starts, wh
 - **Keeping the lull:** struck sounds start faster than today's 0.4 s fade-in. Give them a soft start (still no click) and keep the long reverb, so they stay gentle.
 - **Tone slider:** each recipe decides what Tone means for it (the filter for most; brightness of the FM overtones for the bells).
 
+### Progress
+
+- **2026-11-06:** step 1 done (sounds table, output unchanged). The struck group is built: Glass, Kalimba, Harp and Tine, volume-matched by measurement. `npm run clips` renders listening clips (`--blind` for a blind test).
+- Harp plays up to about 1 dB quieter as Tone brightens: a brighter pluck is spikier, and it took the loudest mix to 0.914.
+- The overall output came down about 0.5 dB (`MASTER_LEVEL` 0.57 → 0.54), so the struck sounds keep room under the peak limit (worst was 0.895, Kalimba).
+
 ### How to build it
 
 1. **Refactor first, no sound change.** Make each sound an entry in a `SOUNDS` table (label, smaller technical name, recipe). The current four share one recipe. The audio checks should prove the output is identical, as with stereo's Mono check.
