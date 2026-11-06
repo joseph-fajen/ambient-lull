@@ -73,22 +73,19 @@ const DRONE_GLIDE = 0.08; // seconds: volume changes glide instead of jumping
 // The default volume (0.33) gives about 0.11: roughly 9 dB under the melody.
 export const droneGain = volume => DRONE_LEVEL_MAX * volume ** 2;
 
-// Freeze a param at its current value at `time`, so a new ramp starts from there.
-function holdAt(param, time) {
-  if (param.cancelAndHoldAtTime) {
-    param.cancelAndHoldAtTime(time);
-  } else {
-    param.cancelScheduledValues(time);
-    param.setValueAtTime(param.value, time);
-  }
-}
-
+// Two gain stages, so their automations never mix: `fade` (fade-in/out, straight
+// ramps only) and `level` (the volume slider, short glides only). Mixing both kinds of
+// automation on one gain, then freezing it with cancelAndHoldAtTime, made Chrome drop
+// the drone to silence at a key change: an audible pop.
 export function startDrone(ctx, destination, time, midi, volume) {
   const freq = midiToFrequency(midi);
-  const out = ctx.createGain();
+  const level = ctx.createGain();
+  level.gain.value = droneGain(volume);
+  level.connect(destination);
+  const out = ctx.createGain(); // the fade stage
   out.gain.setValueAtTime(0, time);
-  out.gain.linearRampToValueAtTime(droneGain(volume), time + DRONE_FADE);
-  out.connect(destination);
+  out.gain.linearRampToValueAtTime(1, time + DRONE_FADE);
+  out.connect(level);
 
   const sources = [];
   const source = (type, frequency, level, to, detune = 0) => {
@@ -118,21 +115,24 @@ export function startDrone(ctx, destination, time, midi, volume) {
 
   let released = false;
   return {
-    // Glide to a new volume, starting at `at` (also interrupts a fade-in).
+    // Glide to a new volume, starting at `at`. Doesn't touch the fade.
     setVolume(newVolume, at) {
       if (released) return;
-      holdAt(out.gain, at);
-      out.gain.setTargetAtTime(droneGain(newVolume), at, DRONE_GLIDE);
+      level.gain.setTargetAtTime(droneGain(newVolume), at, DRONE_GLIDE);
     },
 
-    // Fade out from wherever it is now, then stop.
+    // Fade out from wherever the fade-in had reached at `at`, then stop. That point is
+    // worked out here rather than read back from the browser. Re-stating the ramp up to
+    // `at` keeps a fade-in that's still under way intact until then.
     release(at) {
       if (released) return;
       released = true;
-      holdAt(out.gain, at);
+      const reached = Math.min(1, Math.max(0, (at - time) / DRONE_FADE));
+      out.gain.cancelScheduledValues(at);
+      out.gain.linearRampToValueAtTime(reached, at);
       out.gain.linearRampToValueAtTime(0, at + DRONE_FADE);
       for (const osc of sources) osc.stop(at + DRONE_FADE + 0.05);
-      sources[0].onended = () => out.disconnect();
+      sources[0].onended = () => level.disconnect();
     },
   };
 }

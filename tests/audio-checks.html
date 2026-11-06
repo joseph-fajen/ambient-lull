@@ -214,7 +214,44 @@
       report(worstSpread <= 2, 'Waveforms are volume-matched (within 2 dB)', lines.join(' | '));
     }
 
+    // 6. No pop at a key change: the old drone fades out smoothly while the new one fades
+    // in. Covers the cases that used to pop: after moving the volume slider, and a second
+    // key change while the new drone is still fading in.
+    function biggestJump(buffer, from, to) {
+      const d = buffer.getChannelData(0);
+      let max = 0;
+      for (let i = Math.floor(from * RATE) + 1; i < to * RATE; i++) max = Math.max(max, Math.abs(d[i] - d[i - 1]));
+      return max;
+    }
+
+    async function checkKeyChange() {
+      const cases = [
+        { name: 'after slider moves', change: 10, normal: [5, 9.5], build: (ctx, out) => {
+          const d = startDrone(ctx, out, 0.05, dronePitch('F'), 0.33);
+          d.setVolume(0.8, 3); d.setVolume(1, 9.9);
+          d.release(10);
+          startDrone(ctx, out, 10, dronePitch('C'), 1);
+        } },
+        { name: 'mid fade-in', change: 1, normal: [0.6, 0.95], build: (ctx, out) => {
+          startDrone(ctx, out, 0.05, dronePitch('F'), 1).release(1);
+          startDrone(ctx, out, 1, dronePitch('C'), 1);
+        } },
+      ];
+      const results = [];
+      let ok = true;
+      for (const c of cases) {
+        const buf = await render(c.change + 4, ctx => c.build(ctx, ctx.destination));
+        const atChange = biggestJump(buf, c.change - 0.05, c.change + 0.1);
+        const normal = biggestJump(buf, ...c.normal);
+        ok &&= atChange <= normal * 1.5;
+        results.push(`${c.name}: ${atChange.toFixed(4)} at the change vs ${normal.toFixed(4)} normally`);
+      }
+      report(ok, 'No pop when the drone changes key',
+        `biggest sample-to-sample jump — ${results.join('; ')} (limit 1.5x normal)`);
+    }
+
     try {
+      await checkKeyChange();
       await checkVolumeMatch();
       await checkClicks();
       await checkDrone();
