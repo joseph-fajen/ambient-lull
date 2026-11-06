@@ -19,7 +19,7 @@ const throwingStorage = {
   setItem() { throw new Error('denied'); },
 };
 
-const MINE = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.3, tempo: 72, drone: false, droneVolume: 0.8, autoKey: true, keyCycleSeconds: 60 };
+const MINE = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.3, tempo: 72, drone: false, droneVolume: 0.8, autoKey: true, keyCycleSeconds: 60, harmony: 0.7 };
 
 const withSlots = slots => fakeStorage({ [STORAGE_KEY]: JSON.stringify({ version: 1, slots }) });
 
@@ -141,4 +141,10 @@ test('presets saved before drone volume existed load with the default volume', (
   const { droneVolume, ...older } = MINE;
   const store = createPresetStore(withSlots([{ name: 'Before', settings: older }]));
   assert.equal(store.load(0).droneVolume, DEFAULT_SETTINGS.droneVolume);
+});
+
+test('presets saved before harmony existed load with the default harmony', () => {
+  const { harmony, ...older } = MINE;
+  const store = createPresetStore(withSlots([{ name: 'Before', settings: older }]));
+  assert.deepEqual(store.load(0), { ...older, harmony: DEFAULT_SETTINGS.harmony });
 });

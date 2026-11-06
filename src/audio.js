@@ -38,8 +38,9 @@ export const toneToCutoff = tone => TONE_CUTOFF_MIN * (TONE_CUTOFF_MAX / TONE_CU
 const RELEASE_SHAPE = Float32Array.from({ length: 128 }, (_, i) => (1 - i / 127) ** 2);
 
 // The voice. Any future voice keeps this signature:
-//   (ctx, destination, time, { midi, duration }, { waveform, tone })
-export function playNote(ctx, destination, time, { midi, duration }, { waveform, tone }) {
+//   (ctx, destination, time, { midi, duration, level }, { waveform, tone })
+// `level` (default 1) scales the note's volume.
+export function playNote(ctx, destination, time, { midi, duration, level = 1 }, { waveform, tone }) {
   const osc = ctx.createOscillator();
   osc.type = waveform;
   osc.frequency.value = midiToFrequency(midi);
@@ -50,7 +51,7 @@ export function playNote(ctx, destination, time, { midi, duration }, { waveform,
   filter.Q.value = 0; // no resonant peak
 
   const amp = ctx.createGain();
-  const peak = VOICE_PEAK * WAVEFORM_GAIN[waveform];
+  const peak = VOICE_PEAK * WAVEFORM_GAIN[waveform] * level;
   const attack = Math.min(ATTACK, duration / 4);
   amp.gain.setValueAtTime(0, time);
   amp.gain.linearRampToValueAtTime(peak, time + attack);
@@ -60,6 +61,17 @@ export function playNote(ctx, destination, time, { midi, duration }, { waveform,
   osc.start(time);
   osc.stop(time + duration);
   osc.onended = () => amp.disconnect();
+}
+
+// A melody note from the composer, plus its harmony note if it has one. The harmony
+// is quieter, so it supports the melody instead of competing with it.
+export const HARMONY_LEVEL = 0.6;
+
+export function playWithHarmony(ctx, destination, time, note, settings) {
+  playNote(ctx, destination, time, note, settings);
+  if (note.harmony != null) {
+    playNote(ctx, destination, time, { midi: note.harmony, duration: note.duration, level: HARMONY_LEVEL }, settings);
+  }
 }
 
 // Drone: a soft, sustained bass on the root, tamboura-like. A sine gives the body;

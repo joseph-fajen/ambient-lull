@@ -201,7 +201,17 @@ Features and fixes added after milestone 7, each built and tested the same way. 
 - The drone now has separate gain stages for its fade and its volume. The fade's starting point is worked out directly instead of read back from the browser.
 - Audio check: no pop when the drone changes key, both after slider moves and mid fade-in. It fails on the old code.
 
+### Harmony
+- A slider (`harmony`, 0–1, default 0.33, saved in presets). The chance that a note gets a harmony note is half the setting: about 1 in 6 at the default, every other note at full.
+- The harmony note is in the scale, a minor or major 3rd, a 4th or a 5th from the melody note. It goes above when there's room in the melody range, otherwise the same distance below, so it never leaves the range. Every note of every key × scale has at least one choice.
+- It starts with the melody note and lasts as long. It's played at 0.6 of the melody's level (`HARMONY_LEVEL` in `src/audio.js`, about 4.4 dB under the melody), chosen after measuring 0.6, 0.8 and 1.0.
+- Harmony draws its own random numbers, so moving the slider adds or removes harmony notes without changing the melody line.
+- Tests: the sweep above; the share of notes with harmony at 0, the default and full; old presets load with the default.
+- Audio checks: peak 0.856 with harmony and drone at full (was 0.812 without harmony); harmony makes the music +0.6 dB louder at the default and +0.9 dB at full.
+
 ### Listening checks for these
 - [ ] Drone slider: smooth glide, no zipper noise. At Loud, the drone takes over without harshness or distortion.
 - [ ] Cycle keys at 10 s with the drone turned up: each key change glides, with no pop.
 - [ ] Biggest register shifts: F to C and F♯ to D♭ (up to 7 semitones). Smooth, not jarring.
+- [ ] Harmony at default: occasional, gentle two-note moments; the melody still leads.
+- [ ] Harmony at Often, in Japanese In and Lydian: consonant every time, never muddy. Try the lowest key (F♯) with Dark tone too.

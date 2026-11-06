@@ -2,7 +2,7 @@
 // performer (audio.js).
 import { DEFAULT_SETTINGS, WAVEFORMS, TONE_MIN, TONE_MAX, KEY_CYCLE_MIN, KEY_CYCLE_MAX } from './settings.js';
 import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX, beatInterval, createComposer, dronePitch, nextKeyInCircle } from './music.js';
-import { playNote, createBus, startDrone } from './audio.js';
+import { playWithHarmony, createBus, startDrone } from './audio.js';
 import { createTransport, createKeyCycle } from './scheduler.js';
 import { createPresetStore, NAME_MAX } from './presets.js';
 
@@ -30,7 +30,7 @@ function tick() {
   }
   for (const time of transport.due(ctx.currentTime, () => beatInterval(settings.tempo))) {
     updateDrone(time);
-    playNote(ctx, bus.input, time, composer.next(), settings);
+    playWithHarmony(ctx, bus.input, time, composer.next(), settings);
   }
 }
 
@@ -95,6 +95,7 @@ const keyCycleValue = document.getElementById('key-cycle-value');
 const droneVolumeSlider = document.getElementById('drone-volume');
 const waveformGroup = document.getElementById('waveform');
 const toneSlider = document.getElementById('tone');
+const harmonySlider = document.getElementById('harmony');
 
 const fillSelect = (select, table) => select.replaceChildren(...table.map(e => new Option(e.name, e.id)));
 fillSelect(keySelect, KEYS);
@@ -128,6 +129,7 @@ function showSettings() {
   droneVolumeSlider.value = settings.droneVolume;
   waveformGroup.querySelector(`input[value="${settings.waveform}"]`).checked = true;
   toneSlider.value = settings.tone;
+  harmonySlider.value = settings.harmony;
 }
 
 // Restart the 30-second key countdown (on a manual key change, switching cycling on,
@@ -160,6 +162,7 @@ droneVolumeSlider.addEventListener('input', () => {
 });
 waveformGroup.addEventListener('change', e => { settings.waveform = e.target.value; });
 toneSlider.addEventListener('input', () => { settings.tone = Number(toneSlider.value); });
+harmonySlider.addEventListener('input', () => { settings.harmony = Number(harmonySlider.value); });
 showSettings();
 
 // Presets: 4 named slots. Loading applies live, like any other change.

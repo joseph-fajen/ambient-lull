@@ -92,15 +92,34 @@ export function nextNote(prevMidi, settings, rng) {
   return { midi: pool[to], duration };
 }
 
+// Harmony: a second note from the scale, a minor or major 3rd, a 4th or a 5th
+// (semitones) away from the melody note. Above it when there's room in the melody
+// range, otherwise the same distance below, so it never leaves the range.
+export const HARMONY_INTERVALS = [3, 4, 5, 7];
+export const HARMONY_CHANCE_MAX = 0.5; // at harmony = 1, every other note on average
+
+export function harmonyNote(midi, settings, rng) {
+  const pool = notePool(settings.key, settings.scale);
+  const above = pool.filter(m => HARMONY_INTERVALS.includes(m - midi));
+  const below = pool.filter(m => HARMONY_INTERVALS.includes(midi - m));
+  const choices = above.length ? above : below;
+  return choices.length ? choices[Math.floor(rng() * choices.length)] : null;
+}
+
 // The composer for one run: remembers the last note and reads the live settings
 // object for every new note, so changes apply from the next note on.
+// Harmony draws from its own random sequence, so the harmony amount never changes
+// the melody line itself.
 export function createComposer(settings, rng) {
   let prev = null;
+  const harmonyRng = createRandom(Math.floor(rng() * 2 ** 32));
   return {
     next() {
       const note = nextNote(prev, settings, rng);
       prev = note.midi;
-      return note;
+      const chance = (settings.harmony ?? 0) * HARMONY_CHANCE_MAX;
+      const harmony = harmonyRng() < chance ? harmonyNote(note.midi, settings, harmonyRng) : null;
+      return { ...note, harmony };
     },
   };
 }

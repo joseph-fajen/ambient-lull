@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   KEYS, SCALES, CENTER_MIDI, TEMPO_MIN, TEMPO_MAX, NOTE_LENGTH_MIN, NOTE_LENGTH_MAX,
   rootMidi, notePool, nextNote, noteLength, createRandom, createComposer, dronePitch, nextKeyInCircle,
+  harmonyNote, HARMONY_INTERVALS, HARMONY_CHANCE_MAX,
 } from '../src/music.js';
 
 const settingsFor = (key, scale, tempo = 40) => ({ key, scale, tempo });
@@ -189,4 +190,73 @@ test('circle of fifths: each step goes up a fifth, visiting all 12 keys', () => 
   for (let i = 0; i < 12; i++) { seen.push(key); key = nextKeyInCircle(key); }
   assert.equal(key, 'C', 'back to the start after 12 steps');
   assert.deepEqual(seen, ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', 'F']);
+});
+
+test('harmony intervals are a 3rd, 4th or 5th (no seconds, no tritone)', () => {
+  assert.deepEqual([...HARMONY_INTERVALS].sort((a, b) => a - b), [3, 4, 5, 7]);
+});
+
+test('harmony sweep: every key x scale x pool note has a harmony, in scale and in range', () => {
+  for (const k of KEYS) {
+    for (const s of SCALES) {
+      const pool = notePool(k.id, s.id);
+      const settings = settingsFor(k.id, s.id);
+      for (const midi of pool) {
+        for (let seed = 1; seed <= 5; seed++) {
+          const h = harmonyNote(midi, settings, createRandom(seed));
+          const label = `${k.id} ${s.id} melody ${midi}: harmony ${h}`;
+          assert.ok(pool.includes(h), `in scale and range: ${label}`);
+          assert.ok(HARMONY_INTERVALS.includes(Math.abs(h - midi)), `a 3rd, 4th or 5th: ${label}`);
+        }
+      }
+    }
+  }
+});
+
+test('harmony goes above the melody note, unless that would leave the range', () => {
+  const pool = notePool('C', 'major');
+  assert.ok(harmonyNote(60, settingsFor('C', 'major'), createRandom(1)) > 60);
+  assert.ok(harmonyNote(pool.at(-1), settingsFor('C', 'major'), createRandom(1)) < pool.at(-1));
+});
+
+test('harmony picks among the 3rd, 4th and 5th, not always the same one', () => {
+  const seen = new Set();
+  for (let seed = 1; seed <= 50; seed++) seen.add(harmonyNote(60, settingsFor('C', 'major'), createRandom(seed)) - 60);
+  assert.deepEqual([...seen].sort((a, b) => a - b), [4, 5, 7]); // C major from C: E, F, G
+});
+
+function harmonyShare(harmony, notes = 6000) {
+  const composer = createComposer({ ...settingsFor('D', 'dorian'), harmony }, createRandom(7));
+  let count = 0;
+  for (let i = 0; i < notes; i++) if (composer.next().harmony !== null) count++;
+  return count / notes;
+}
+
+test('harmony amount: 0 never, the default about 1 in 6, full about 1 in 2', () => {
+  assert.equal(HARMONY_CHANCE_MAX, 0.5);
+  assert.equal(harmonyShare(0), 0);
+  const atDefault = harmonyShare(0.33);
+  assert.ok(atDefault > 0.14 && atDefault < 0.19, `default: ${atDefault}`);
+  const atFull = harmonyShare(1);
+  assert.ok(atFull > 0.46 && atFull < 0.54, `full: ${atFull}`);
+});
+
+test('harmony: missing setting means none (old callers keep working)', () => {
+  const composer = createComposer(settingsFor('C', 'major'), createRandom(1));
+  for (let i = 0; i < 200; i++) assert.equal(composer.next().harmony, null);
+});
+
+test('composer: harmony notes follow the live key and scale, and the melody walk is unchanged', () => {
+  for (let seed = 1; seed <= 20; seed++) {
+    const settings = { key: 'C', scale: 'major-pentatonic', tempo: 40, harmony: 1 };
+    const composer = createComposer(settings, createRandom(seed));
+    const plain = createComposer({ ...settings, harmony: 0 }, createRandom(seed));
+    for (let i = 0; i < 30; i++) {
+      if (i === 15) { settings.key = 'Ab'; settings.scale = 'japanese-in'; }
+      const note = composer.next();
+      const pool = notePool(settings.key, settings.scale);
+      if (note.harmony !== null) assert.ok(pool.includes(note.harmony), `seed ${seed} note ${i}`);
+      if (i < 15) assert.equal(note.midi, plain.next().midi, 'harmony draws its own random numbers');
+    }
+  }
 });
