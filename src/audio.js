@@ -1,6 +1,6 @@
 // Performer: turns notes into sound with Web Audio. Knows nothing about melody.
 //
-// Signal path:  voice (osc -> low-pass -> envelope)  ->  bus.input
+// Signal path:  voice (osc -> low-pass -> envelope -> panner)  ->  bus.input
 //               bus.input -> dry ----------------\
 //               bus.input -> reverb -> wet -------+-> bus.master -> speakers
 //               drone -> bus.dryInput -> dry ----/  (skips the reverb)
@@ -15,8 +15,8 @@ export const TONE_CUTOFF_MAX = 3200; // Hz, tone = 1 (kept low so sawtooth never
 export const REVERB_SECONDS = 4;
 export const DRY_LEVEL = 0.7;
 // Overall output level. Leaves headroom for the drone and harmony at full volume over the
-// busiest melody (measured over many seeds: worst about 0.85).
-export const MASTER_LEVEL = 0.6;
+// busiest melody, at full width (measured over many seeds: worst about 0.84).
+export const MASTER_LEVEL = 0.57;
 export const WET_LEVEL = 0.5;
 export const STOP_FADE = 1.5; // seconds for Stop to fade to silence
 
@@ -38,10 +38,21 @@ export const toneToCutoff = tone => TONE_CUTOFF_MIN * (TONE_CUTOFF_MAX / TONE_CU
 // Long, smooth fade-out: (1 - x)^2 from 1 to 0, ending with zero slope (no click).
 const RELEASE_SHAPE = Float32Array.from({ length: 128 }, (_, i) => (1 - i / 127) ** 2);
 
+// Stereo: a note's place (-1..1, from the composer) times Width times this. Even at
+// Wide, no note sits entirely in one ear.
+export const WIDTH_MAX = 0.8;
+
+// The browser's panner is equal-power: a centred note comes out 3 dB down in each
+// channel. This makes up for it, so Mono sounds exactly as before stereo existed, and a
+// panned note is as loud overall as a centred one.
+const PAN_GAIN = Math.SQRT2;
+
+export const stereoPosition = (pan, width) => pan * width * WIDTH_MAX;
+
 // The voice. Any future voice keeps this signature:
-//   (ctx, destination, time, { midi, duration, level }, { waveform, tone })
-// `level` (default 1) scales the note's volume.
-export function playNote(ctx, destination, time, { midi, duration, level = 1 }, { waveform, tone }) {
+//   (ctx, destination, time, { midi, duration, level, pan }, { waveform, tone, width })
+// `level` (default 1) scales the note's volume; `pan` (default 0) is its place.
+export function playNote(ctx, destination, time, { midi, duration, level = 1, pan = 0 }, { waveform, tone, width = 0 }) {
   const osc = ctx.createOscillator();
   osc.type = waveform;
   osc.frequency.value = midiToFrequency(midi);
@@ -51,28 +62,32 @@ export function playNote(ctx, destination, time, { midi, duration, level = 1 }, 
   filter.frequency.value = toneToCutoff(tone);
   filter.Q.value = 0; // no resonant peak
 
+  const panner = ctx.createStereoPanner();
+  panner.pan.value = stereoPosition(pan, width);
+
   const amp = ctx.createGain();
-  const peak = VOICE_PEAK * WAVEFORM_GAIN[waveform] * level;
+  const peak = VOICE_PEAK * WAVEFORM_GAIN[waveform] * level * PAN_GAIN;
   const attack = Math.min(ATTACK, duration / 4);
   amp.gain.setValueAtTime(0, time);
   amp.gain.linearRampToValueAtTime(peak, time + attack);
   amp.gain.setValueCurveAtTime(RELEASE_SHAPE.map(x => x * peak), time + attack, duration - attack);
 
-  osc.connect(filter).connect(amp).connect(destination);
+  osc.connect(filter).connect(amp).connect(panner).connect(destination);
   osc.start(time);
   osc.stop(time + duration);
-  osc.onended = () => amp.disconnect();
+  osc.onended = () => panner.disconnect();
 }
 
 // A melody note from the composer, plus its harmony note if it has one. The harmony
 // is quieter, so it supports the melody instead of competing with it, and it always
-// rings long (its own length from the composer), whatever the melody's rhythm.
+// rings long (its own length from the composer), whatever the melody's rhythm. It sits
+// on the opposite side from the melody note.
 export const HARMONY_LEVEL = 0.5;
 
 export function playWithHarmony(ctx, destination, time, note, settings) {
   playNote(ctx, destination, time, note, settings);
   if (note.harmony != null) {
-    playNote(ctx, destination, time, { midi: note.harmony, duration: note.harmonyDuration, level: HARMONY_LEVEL }, settings);
+    playNote(ctx, destination, time, { midi: note.harmony, duration: note.harmonyDuration, level: HARMONY_LEVEL, pan: note.harmonyPan }, settings);
   }
 }
 

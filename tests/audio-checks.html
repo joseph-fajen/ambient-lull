@@ -17,7 +17,7 @@
   <p id="status">Running…</p>
   <ul id="results"></ul>
   <script type="module">
-    import { playNote, playWithHarmony, createBus, startDrone, DRONE_FADE } from '../src/audio.js';
+    import { playNote, playWithHarmony, createBus, startDrone, DRONE_FADE, WIDTH_MAX } from '../src/audio.js';
     import { DEFAULT_SETTINGS } from '../src/settings.js';
     import { nextNote, beatInterval, createRandom, dronePitch, createComposer, noteLength, NOTE_LENGTHS, TEMPO_MAX } from '../src/music.js';
     import { WAVEFORMS } from '../src/settings.js';
@@ -66,15 +66,16 @@
     const dB = x => (x > 0 ? (20 * Math.log10(x)).toFixed(1) : '-inf') + ' dB';
 
     // 1. No clicks: a single dry note starts and ends at near-zero volume.
-    // Shortest note length (sharpest fades), brightest tone, lowest/middle/highest pitch.
+    // Shortest note length (sharpest fades), brightest tone, lowest/middle/highest pitch,
+    // placed left, centre and right at full width.
     async function checkClicks() {
       const shortest = noteLength(TEMPO_MAX) * Math.min(...NOTE_LENGTHS.map(l => l.ring));
       const start = 0.1, duration = shortest, end = start + duration;
       let worstStart = 0, worstEnd = 0, worstAfter = 0;
       for (const w of WAVEFORMS) {
-        for (const midi of [42, 60, 77]) {
+        for (const [midi, pan] of [[42, -1], [60, 0], [77, 1]]) {
           const buf = await render(end + 0.3, ctx =>
-            playNote(ctx, ctx.destination, start, { midi, duration }, { waveform: w.id, tone: 1 }));
+            playNote(ctx, ctx.destination, start, { midi, duration, pan }, { waveform: w.id, tone: 1, width: 1 }));
           const notePeak = peak(buf);
           worstStart = Math.max(worstStart, peak(buf, start, start + 0.005) / notePeak);
           worstEnd = Math.max(worstEnd, peak(buf, end - 0.02, end) / notePeak);
@@ -100,7 +101,7 @@
     }
 
     // 2. No distortion: a dense melody through the full bus (dry + reverb) never reaches 1.0.
-    // Worst case: drone and harmony at full, brightest tone. Steady rhythm at 120 BPM is the
+    // Worst case: drone and harmony at full, full width, brightest tone. Steady rhythm at 120 BPM is the
     // loudest (measured), so it gets the most seeds; peaks vary a lot from seed to seed.
     async function checkPeak() {
       const runs = [];
@@ -114,7 +115,7 @@
       }
       let worst = { level: 0 };
       for (const { w, key, seed, tempo, variety } of runs) {
-        const settings = { key, scale: 'major-pentatonic', waveform: w.id, tone: 1, tempo, harmony: 1, variety };
+        const settings = { key, scale: 'major-pentatonic', waveform: w.id, tone: 1, tempo, harmony: 1, variety, width: 1 };
         const playFor = 20;
         const buf = await render(playFor + 12, ctx => {
           const bus = createBus(ctx);
@@ -126,7 +127,7 @@
       }
       report(worst.level < 0.9, 'Peak stays well below 1.0',
         `loudest of ${runs.length} runs: ${worst.level.toFixed(3)} (${dB(worst.level)}) — ${worst.label}, brightest tone, ` +
-        `drone and harmony at full (limit 0.9, leaving room for unluckier runs)`);
+        `drone and harmony at full, full width (limit 0.9, leaving room for unluckier runs)`);
     }
 
     // 2b. Harmony supports the melody rather than piling on: turning it up adds little
@@ -171,6 +172,47 @@
       }
       report(worst <= 3, 'Varied rhythm stays close to steady in loudness',
         `vs steady — ${lines.join('; ')} (limit 3 dB)`);
+    }
+
+    // 2d. Stereo: Mono puts a note in the middle; at full width a note at the edge leans
+    // well to one side, without getting louder or quieter overall.
+    async function checkStereo() {
+      const level = (buf, ch, from, to) => rms({ numberOfChannels: 1, getChannelData: () => buf.getChannelData(ch) }, from, to);
+      const note = async (pan, width) => {
+        const buf = await render(3, ctx =>
+          playNote(ctx, ctx.destination, 0.05, { midi: 60, duration: 2.5, pan }, { ...DEFAULT_SETTINGS, width }));
+        const l = level(buf, 0, 0.1, 2.5), r = level(buf, 1, 0.1, 2.5);
+        return { l, r, total: Math.hypot(l, r) };
+      };
+      const mono = await note(1, 0);
+      const centre = await note(0, 1);
+      const right = await note(1, 1);
+      const left = await note(-1, 1);
+      const monoGap = Math.abs(20 * Math.log10(mono.l / mono.r));
+      const lean = 20 * Math.log10(right.r / right.l);
+      const leanLeft = 20 * Math.log10(left.l / left.r);
+      const totalDiff = Math.max(...[right, left].map(n => Math.abs(20 * Math.log10(n.total / centre.total))));
+      report(monoGap < 0.01 && lean > 10 && Math.abs(lean - leanLeft) < 0.01 && totalDiff < 0.1,
+        'Stereo places notes left to right without changing their loudness',
+        `Mono: left and right differ by ${monoGap.toFixed(3)} dB; full width, edge note (pan ${WIDTH_MAX}): ` +
+        `${lean.toFixed(1)} dB towards its side (right) and ${leanLeft.toFixed(1)} dB (left); ` +
+        `overall level vs centred ${totalDiff.toFixed(3)} dB (needs 0 dB at Mono, over 10 dB lean, under 0.1 dB change)`);
+
+      // The whole mix: default settings at Mono, default and full width.
+      const levelAt = async width => {
+        let sum = 0;
+        for (const seed of [1, 2]) {
+          const settings = { ...DEFAULT_SETTINGS, width };
+          const buf = await render(60, ctx => playMelody(ctx, createBus(ctx).input, settings, seed, 60));
+          sum += 20 * Math.log10(rms(buf, 8, 58));
+        }
+        return sum / 2;
+      };
+      const monoMix = await levelAt(0);
+      const atDefault = (await levelAt(DEFAULT_SETTINGS.width)) - monoMix;
+      const atFull = (await levelAt(1)) - monoMix;
+      report(Math.abs(atDefault) <= 0.5 && Math.abs(atFull) <= 0.5, 'Width keeps the music at the same loudness',
+        `vs Mono: ${atDefault.toFixed(2)} dB at default, ${atFull.toFixed(2)} dB at full (limit ±0.5 dB)`);
     }
 
     // 3. Stop is clean: after the fade, the output (notes and reverb tail) is silent.
@@ -299,6 +341,7 @@
       await checkPeak();
       await checkHarmonyLoudness();
       await checkRhythmLoudness();
+      await checkStereo();
       await checkStop();
     } catch (err) {
       report(false, 'Checks crashed', String(err));

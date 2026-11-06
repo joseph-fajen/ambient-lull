@@ -222,7 +222,16 @@ Features and fixes added after milestone 7, each built and tested the same way. 
 
 ### Peak headroom, re-measured
 - Peaks vary a lot from one random run to the next. Over 48 runs, harmony at full took the worst case to 0.916 (0.810 without harmony), closer to 1.0 than the old 2-seed check had shown.
-- The overall output came down 0.7 dB (`MASTER_LEVEL` 0.65 → 0.6). The peak check now covers 72 runs, including varied rhythm, with a limit of 0.9 to leave room for unluckier runs. Worst now: 0.836.
+- The overall output came down 0.7 dB (`MASTER_LEVEL` 0.65 → 0.6). The peak check now covers 72 runs, including varied rhythm, with a limit of 0.9 to leave room for unluckier runs. Worst now: 0.836. (Stereo later took it down to 0.57; see below.)
+
+### Stereo width
+- A slider labelled Width, Mono to Wide (`width`, 0–1, default 0.5, saved in presets; old presets load with 0.5).
+- The composer gives each note a place, `pan` from −1 to 1, at random from its own random sequence. It's seeded from the rhythm's seed rather than a new draw, so a given seed still plays the same melody as before. The harmony note gets `harmonyPan` = −`pan`: the opposite side.
+- The performer puts each note through a `StereoPannerNode` at place × width × 0.8 (`WIDTH_MAX` in `src/audio.js`), so even at Wide no note is entirely in one ear. The default gives places within ±0.4. Applies from the next note. The drone is unchanged: centred.
+- The panner is equal-power, so a centred note comes out 3 dB down in each channel. The voice makes up for it (× √2): Mono renders sample-for-sample the same as before (measured against `main`, largest difference 7e-8), and a panned note is as loud overall as a centred one.
+- Measured before tuning, over 128 worst-case runs (drone and harmony at full, brightest tone, 120 BPM): the worst peak was 0.836 at Mono, 0.864 at the default and 0.878 at Wide, since panning puts more of a note into one channel. Loudness didn't change (−23.81 / −23.81 / −23.86 dB). To get the headroom back, the overall output came down 0.45 dB (`MASTER_LEVEL` 0.6 → 0.57).
+- Tests: every note's place is between −1 and 1 and reaches both sides; harmony is always opposite; places don't change when harmony or rhythm change, and the melody doesn't either; settings and old presets.
+- Audio checks: Mono gives 0.000 dB between left and right; at Wide an edge note leans 16 dB to its side with 0.000 dB change in overall level; the mix is +0.07 dB vs Mono at the default and at Wide (limit ±0.5); the peak check now runs at full width (worst of 72: 0.834); the click check includes notes placed left and right. Harmony now adds +0.8 dB at the default and +1.1 dB at full.
 
 ### Listening checks for these
 - [ ] Drone slider: smooth glide, no zipper noise. At Loud, the drone takes over without harshness or distortion.
@@ -234,3 +243,5 @@ Features and fixes added after milestone 7, each built and tested the same way. 
 - [ ] Rhythm at Varied, 20 BPM: 4-beat notes leave 12 s gaps. Spacious, not empty?
 - [ ] Rhythm at Varied, 120 BPM: quick pairs 0.25 s apart, with the soft 0.4 s fade-in. Still distinct notes, not a smear?
 - [ ] Harmony at Often with Rhythm at Varied: the long harmony notes sustain under quick runs without getting muddy.
+- [ ] Width, on headphones: Mono sounds as before. At the default, notes drift gently around the middle. At Wide, spacious but not ping-pong, and the drone stays in the middle.
+- [ ] Width at Wide with Harmony at Often: the two notes of a pair come from opposite sides and still sound like one chord.

@@ -25,6 +25,7 @@ All changes apply live, from the next note (drone volume applies immediately).
 | Rhythm | From Steady (one note per beat) to Varied. Varied notes last half a beat (always in pairs, so the melody lands back on the beat) up to 4 beats. Quick notes ring shorter and held notes longer. Default: in the middle, about half the notes 1 beat. |
 | Sound | Soft (sine), Warm (triangle, default), Hollow (square), Bright (sawtooth), volume-matched. |
 | Tone | A low-pass filter from Dark to Bright, limited so even Bright never gets harsh. |
+| Width | Stereo, from Mono to Wide. Each melody note gets its own place left to right, and its harmony note sits on the opposite side. The drone stays in the middle. Even at Wide, no note is entirely in one ear. Default: gently wide, about halfway. |
 | Harmony | Now and then a second, quieter note sounds with the melody: a 3rd, 4th or 5th, always in the scale and inside the melody's range. Harmony notes always ring long, as long as a 4-beat note, whatever the melody's rhythm. The slider sets how often, from Never to Often (about every other note). Default: about 1 note in 6. |
 | Drone | A soft bass on the root, two octaves down (on by default). Key changes crossfade it. The slider sets its volume, from silent up to about 10 dB louder than the melody. |
 | Presets | 4 named slots. Save stores the current settings (asking first if the slot is filled); Load applies them live. Kept in the browser's localStorage. |
@@ -37,7 +38,7 @@ All changes apply live, from the next note (drone volume applies immediately).
 npm test
 ```
 
-These cover the pure logic: scales and keys, the melody walk (a sweep of every key × scale × 20 seeds, checking range, scale, step size and note length), harmony notes (in scale, in range and a 3rd, 4th or 5th away, for every note of every key × scale), note lengths (allowed lengths, quick notes in pairs, back on the beat), tempo to note length, note timing and Start/Stop states with a fake clock, settings validation, and presets with fake and failing storage.
+These cover the pure logic: scales and keys, the melody walk (a sweep of every key × scale × 20 seeds, checking range, scale, step size and note length), harmony notes (in scale, in range and a 3rd, 4th or 5th away, for every note of every key × scale), stereo places (both sides, harmony opposite the melody), note lengths (allowed lengths, quick notes in pairs, back on the beat), tempo to note length, note timing and Start/Stop states with a fake clock, settings validation, and presets with fake and failing storage.
 
 **Audio checks** (Node 22+, and Chrome, Chromium or Edge):
 
@@ -53,19 +54,20 @@ The page renders sound offline (to numbers, not the speakers) and checks:
 - notes and the drone start and end without clicks
 - the drone changes key without a pop
 - the drone sits under the melody in every key at default volume, and about 10 dB louder than the melody at full volume
-- the peak stays below 1.0 in the worst case (drone and harmony at full)
+- the peak stays below 1.0 in the worst case (drone and harmony at full, full width)
 - harmony adds little loudness (under 1 dB at default)
 - varied rhythm stays within 3 dB of steady in loudness
+- Width places notes left to right without changing loudness (Mono is centred)
 - the output is silent after Stop
 
 ## How it's built
 
 ```
 src/
-  music.js       composer (pure): keys, scales, circle of fifths, the melody walk, harmony notes, note lengths (rhythm), drone pitch, tempo → note length
+  music.js       composer (pure): keys, scales, circle of fifths, the melody walk, harmony notes, note lengths (rhythm), stereo places, drone pitch, tempo → note length
   settings.js    the settings object (pure): defaults, waveform table, validation
   scheduler.js   timing (pure): which notes are due in the lookahead window; Start/Stop states; key-cycle countdown
-  audio.js       performer: the note voice, harmony level, the drone, reverb, and each run's output chain
+  audio.js       performer: the note voice (with its stereo place), harmony level, the drone, reverb, and each run's output chain
   presets.js     the 4 preset slots; storage is passed in
   main.js        the page: controls, the timer loop, connecting everything
 tests/
@@ -83,7 +85,7 @@ notes/           design thinking and the build plan
 ## Changing things
 
 - **Add a scale:** one line in `SCALES` in `src/music.js`, as a name plus intervals in semitones. It appears in the dropdown automatically.
-- **Tune the sound:** the constants at the top of `src/audio.js` (fade-in, note volume, harmony level, tone range, reverb mix, Stop fade, per-waveform gains, drone's maximum level).
+- **Tune the sound:** the constants at the top of `src/audio.js` (fade-in, note volume, harmony level, stereo width, tone range, reverb mix, Stop fade, per-waveform gains, drone's maximum level).
 - **After changing the sound, re-run the audio checks.** The per-waveform gains in particular were measured, so re-measure them if you change a voice.
 
 ## Known limitations

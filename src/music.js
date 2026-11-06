@@ -134,13 +134,19 @@ function pickBeats(variety, rng) {
 
 // The composer for one run: remembers the last note and reads the live settings
 // object for every new note, so changes apply from the next note on.
-// Harmony and note lengths each draw from their own random sequence, so those
-// settings never change the melody line itself.
+// Harmony, note lengths and stereo places each draw from their own random sequence,
+// so those settings never change the melody line itself.
+// Each note also gets a place left to right, `pan` from -1 to 1; its harmony note goes
+// on the opposite side. The performer scales these by the Width setting.
 export function createComposer(settings, rng) {
   let prev = null;
   let halfPending = false; // the second note of a pair of half-beat notes is due
   const harmonyRng = createRandom(Math.floor(rng() * 2 ** 32));
-  const lengthRng = createRandom(Math.floor(rng() * 2 ** 32));
+  const lengthSeed = Math.floor(rng() * 2 ** 32);
+  const lengthRng = createRandom(lengthSeed);
+  // Seeded from the length seed rather than another draw, so a given seed still plays
+  // the same melody as before stereo existed.
+  const panRng = createRandom(lengthSeed ^ 0x9e3779b9);
   return {
     next() {
       const note = nextNote(prev, settings, rng);
@@ -150,7 +156,11 @@ export function createComposer(settings, rng) {
       const beats = halfPending ? 0.5 : pickBeats(settings.variety ?? 0, lengthRng);
       halfPending = beats === 0.5 && !halfPending;
       const ring = NOTE_LENGTHS.find(l => l.beats === beats).ring;
-      return { ...note, duration: note.duration * ring, beats, harmony, harmonyDuration: note.duration * HARMONY_RING };
+      const pan = panRng() * 2 - 1;
+      return {
+        ...note, duration: note.duration * ring, beats, pan,
+        harmony, harmonyDuration: note.duration * HARMONY_RING, harmonyPan: -pan,
+      };
     },
   };
 }

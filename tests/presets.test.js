@@ -19,7 +19,7 @@ const throwingStorage = {
   setItem() { throw new Error('denied'); },
 };
 
-const MINE = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.3, tempo: 72, drone: false, droneVolume: 0.8, autoKey: true, keyCycleSeconds: 60, harmony: 0.7, variety: 0.25 };
+const MINE = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.3, tempo: 72, drone: false, droneVolume: 0.8, autoKey: true, keyCycleSeconds: 60, harmony: 0.7, variety: 0.25, width: 0.9 };
 
 const withSlots = slots => fakeStorage({ [STORAGE_KEY]: JSON.stringify({ version: 1, slots }) });
 
@@ -153,4 +153,10 @@ test('presets saved before variety existed load with the default variety', () =>
   const { variety, ...older } = MINE;
   const store = createPresetStore(withSlots([{ name: 'Before', settings: older }]));
   assert.deepEqual(store.load(0), { ...older, variety: DEFAULT_SETTINGS.variety });
+});
+
+test('presets saved before width existed load with the default width', () => {
+  const { width, ...older } = MINE;
+  const store = createPresetStore(withSlots([{ name: 'Before', settings: older }]));
+  assert.deepEqual(store.load(0), { ...older, width: DEFAULT_SETTINGS.width });
 });

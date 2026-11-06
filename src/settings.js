@@ -30,6 +30,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   keyCycleSeconds: 30,
   harmony: 0.33, // 0 (never) to 1 (every other note, on average); the default is about 1 in 6
   variety: 0.5, // note lengths: 0 (steady, one per beat) to 1 (every note varies)
+  width: 0.5, // stereo: 0 (mono) to 1 (wide); the default is gently wide
 });
 
 const oneOf = (table, value, fallback) => (table.some(e => e.id === value) ? value : fallback);
@@ -53,5 +54,6 @@ export function normalizeSettings(input) {
     keyCycleSeconds: number(s.keyCycleSeconds, KEY_CYCLE_MIN, KEY_CYCLE_MAX, d.keyCycleSeconds),
     harmony: number(s.harmony, 0, 1, d.harmony),
     variety: number(s.variety, 0, 1, d.variety),
+    width: number(s.width, 0, 1, d.width),
   };
 }

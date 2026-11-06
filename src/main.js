@@ -101,6 +101,7 @@ const waveformGroup = document.getElementById('waveform');
 const toneSlider = document.getElementById('tone');
 const harmonySlider = document.getElementById('harmony');
 const varietySlider = document.getElementById('variety');
+const widthSlider = document.getElementById('width');
 
 const fillSelect = (select, table) => select.replaceChildren(...table.map(e => new Option(e.name, e.id)));
 fillSelect(keySelect, KEYS);
@@ -136,6 +137,7 @@ function showSettings() {
   toneSlider.value = settings.tone;
   harmonySlider.value = settings.harmony;
   varietySlider.value = settings.variety;
+  widthSlider.value = settings.width;
 }
 
 // Restart the 30-second key countdown (on a manual key change, switching cycling on,
@@ -170,6 +172,7 @@ waveformGroup.addEventListener('change', e => { settings.waveform = e.target.val
 toneSlider.addEventListener('input', () => { settings.tone = Number(toneSlider.value); });
 harmonySlider.addEventListener('input', () => { settings.harmony = Number(harmonySlider.value); });
 varietySlider.addEventListener('input', () => { settings.variety = Number(varietySlider.value); });
+widthSlider.addEventListener('input', () => { settings.width = Number(widthSlider.value); });
 showSettings();
 
 // Presets: 4 named slots. Loading applies live, like any other change.

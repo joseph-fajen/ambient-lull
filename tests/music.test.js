@@ -360,3 +360,41 @@ test('harmony notes always ring long (as a 4-beat note), whatever the melody not
   }
   assert.ok(melodyLengths.has(0.5) && melodyLengths.has(4), 'covers quick and held melody notes');
 });
+
+test('stereo place: every note gets one between -1 and 1, spread across both sides', () => {
+  const composer = createComposer({ ...settingsFor('C', 'major'), harmony: 1, variety: 0.5 }, createRandom(8));
+  const places = [];
+  for (let i = 0; i < 500; i++) {
+    const { pan } = composer.next();
+    assert.ok(pan >= -1 && pan <= 1, `note ${i}: ${pan}`);
+    places.push(pan);
+  }
+  assert.ok(places.filter(p => p < -0.5).length > 50 && places.filter(p => p > 0.5).length > 50, 'reaches both sides');
+  assert.ok(new Set(places).size > 400, 'a different place for each note');
+});
+
+test('stereo place: a harmony note sits on the opposite side from its melody note', () => {
+  const composer = createComposer({ ...settingsFor('G', 'dorian'), harmony: 1 }, createRandom(2));
+  let harmonies = 0;
+  for (let i = 0; i < 300; i++) {
+    const note = composer.next();
+    if (note.harmony === null) continue;
+    harmonies++;
+    assert.equal(note.harmonyPan, -note.pan);
+  }
+  assert.ok(harmonies > 100);
+});
+
+test('stereo place draws its own random numbers: melody, harmony and rhythm stay the same', () => {
+  // Places stay put when harmony and rhythm change, and the melody is unchanged (the
+  // existing tests check that harmony and rhythm don't move the melody either).
+  for (let seed = 1; seed <= 20; seed++) {
+    const a = createComposer({ ...settingsFor('Eb', 'lydian'), harmony: 0, variety: 0 }, createRandom(seed));
+    const b = createComposer({ ...settingsFor('Eb', 'lydian'), harmony: 1, variety: 1 }, createRandom(seed));
+    for (let i = 0; i < 50; i++) {
+      const x = a.next(), y = b.next();
+      assert.equal(x.pan, y.pan);
+      assert.equal(x.midi, y.midi);
+    }
+  }
+});
