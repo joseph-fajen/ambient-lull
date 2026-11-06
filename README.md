@@ -67,9 +67,9 @@ The page renders sound offline (to numbers, not the speakers) and checks:
 ```
 src/
   music.js       composer (pure): keys, scales, circle of fifths, the melody walk, harmony notes, note lengths (rhythm), stereo places, harmony drift, drone pitch, tempo → note length
-  settings.js    the settings object (pure): defaults, waveform table, validation
+  settings.js    the settings object (pure): defaults, sounds table, validation
   scheduler.js   timing (pure): which notes are due in the lookahead window; Start/Stop states; key-cycle countdown
-  audio.js       performer: the note voice (with its stereo place), harmony level, the drone, reverb, and each run's output chain
+  audio.js       performer: a recipe for each sound, the note player (with its stereo place), harmony level, the drone, reverb, and each run's output chain
   presets.js     the 4 preset slots; storage is passed in
   main.js        the page: controls, the timer loop, connecting everything
 tests/
@@ -87,8 +87,9 @@ notes/           design thinking and the build plan
 ## Changing things
 
 - **Add a scale:** one line in `SCALES` in `src/music.js`, as a name plus intervals in semitones. It appears in the dropdown automatically.
-- **Tune the sound:** the constants at the top of `src/audio.js` (fade-in, note volume, harmony level, stereo width, tone range, reverb mix, Stop fade, per-waveform gains, drone's maximum level).
-- **After changing the sound, re-run the audio checks.** The per-waveform gains in particular were measured, so re-measure them if you change a voice.
+- **Add a sound:** an entry in `SOUNDS` in `src/settings.js` (id, name, detail, group) and a recipe with the same id in `SOUND_RECIPES` in `src/audio.js`. A unit test checks the two match. Then set its gain with the volume-matching audio check.
+- **Tune the sound:** the constants at the top of `src/audio.js` (fade-in, note volume, harmony level, stereo width, tone range, reverb mix, Stop fade, drone's maximum level), and each sound's gain next to its recipe.
+- **After changing the sound, re-run the audio checks.** Each sound's gain was measured, so re-measure it if you change that sound.
 
 ## Known limitations
 

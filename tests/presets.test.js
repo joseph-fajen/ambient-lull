@@ -19,7 +19,7 @@ const throwingStorage = {
   setItem() { throw new Error('denied'); },
 };
 
-const MINE = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.3, tempo: 72, drone: false, droneVolume: 0.8, autoKey: true, keyCycleSeconds: 60, harmony: 0.7, variety: 0.25, width: 0.9, drift: true };
+const MINE = { key: 'F#', scale: 'dorian', sound: 'sawtooth', tone: 0.3, tempo: 72, drone: false, droneVolume: 0.8, autoKey: true, keyCycleSeconds: 60, harmony: 0.7, variety: 0.25, width: 0.9, drift: true };
 
 const withSlots = slots => fakeStorage({ [STORAGE_KEY]: JSON.stringify({ version: 1, slots }) });
 
@@ -51,7 +51,7 @@ test('values are stored by name, not list position', () => {
   const saved = JSON.parse(storage.raw()).slots[0].settings;
   assert.equal(saved.key, 'F#');
   assert.equal(saved.scale, 'dorian');
-  assert.equal(saved.waveform, 'sawtooth');
+  assert.equal(saved.sound, 'sawtooth');
 });
 
 test('saving stores a copy, not a live reference', () => {

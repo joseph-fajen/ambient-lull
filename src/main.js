@@ -1,6 +1,6 @@
 // Shell: wires the UI to the composer (music.js), the timing (scheduler.js) and the
 // performer (audio.js).
-import { DEFAULT_SETTINGS, WAVEFORMS, TONE_MIN, TONE_MAX, KEY_CYCLE_MIN, KEY_CYCLE_MAX } from './settings.js';
+import { DEFAULT_SETTINGS, SOUNDS, TONE_MIN, TONE_MAX, KEY_CYCLE_MIN, KEY_CYCLE_MAX } from './settings.js';
 import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX, beatInterval, createComposer, dronePitch, nextKeyInCircle } from './music.js';
 import { playWithHarmony, createBus, startDrone } from './audio.js';
 import { createTransport, createKeyCycle } from './scheduler.js';
@@ -99,7 +99,7 @@ const autoKeyToggle = document.getElementById('auto-key');
 const keyCycleSlider = document.getElementById('key-cycle');
 const keyCycleValue = document.getElementById('key-cycle-value');
 const droneVolumeSlider = document.getElementById('drone-volume');
-const waveformGroup = document.getElementById('waveform');
+const soundGroup = document.getElementById('sound');
 const toneSlider = document.getElementById('tone');
 const harmonySlider = document.getElementById('harmony');
 const varietySlider = document.getElementById('variety');
@@ -109,13 +109,13 @@ const driftToggle = document.getElementById('drift');
 const fillSelect = (select, table) => select.replaceChildren(...table.map(e => new Option(e.name, e.id)));
 fillSelect(keySelect, KEYS);
 fillSelect(scaleSelect, SCALES);
-// Waveform picker: mood name large, technical name small.
-waveformGroup.replaceChildren(...WAVEFORMS.map(w => {
+// Sound picker: name large, detail small.
+soundGroup.replaceChildren(...SOUNDS.map(w => {
   const label = document.createElement('label');
-  const input = Object.assign(document.createElement('input'), { type: 'radio', name: 'waveform', value: w.id });
-  const mood = Object.assign(document.createElement('span'), { textContent: w.mood });
-  const tech = Object.assign(document.createElement('small'), { textContent: w.id });
-  label.append(input, mood, tech);
+  const input = Object.assign(document.createElement('input'), { type: 'radio', name: 'sound', value: w.id });
+  const name = Object.assign(document.createElement('span'), { textContent: w.name });
+  const detail = Object.assign(document.createElement('small'), { textContent: w.detail });
+  label.append(input, name, detail);
   return label;
 }));
 toneSlider.min = TONE_MIN;
@@ -136,7 +136,7 @@ function showSettings() {
   keyCycleSlider.value = settings.keyCycleSeconds;
   keyCycleValue.textContent = `every ${settings.keyCycleSeconds} s`;
   droneVolumeSlider.value = settings.droneVolume;
-  waveformGroup.querySelector(`input[value="${settings.waveform}"]`).checked = true;
+  soundGroup.querySelector(`input[value="${settings.sound}"]`).checked = true;
   toneSlider.value = settings.tone;
   harmonySlider.value = settings.harmony;
   varietySlider.value = settings.variety;
@@ -172,7 +172,7 @@ droneVolumeSlider.addEventListener('input', () => {
   settings.droneVolume = Number(droneVolumeSlider.value);
   drone?.setVolume(settings.droneVolume, ctx.currentTime);
 });
-waveformGroup.addEventListener('change', e => { settings.waveform = e.target.value; });
+soundGroup.addEventListener('change', e => { settings.sound = e.target.value; });
 toneSlider.addEventListener('input', () => { settings.tone = Number(toneSlider.value); });
 harmonySlider.addEventListener('input', () => { settings.harmony = Number(harmonySlider.value); });
 varietySlider.addEventListener('input', () => { settings.variety = Number(varietySlider.value); });

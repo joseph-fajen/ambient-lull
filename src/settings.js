@@ -2,12 +2,15 @@
 // Pure: used by the controls, the engine, and presets.
 import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX } from './music.js';
 
-// The four built-in Web Audio waveforms. `id` is saved; `mood` is the big label.
-export const WAVEFORMS = [
-  { id: 'sine', mood: 'Soft' },
-  { id: 'triangle', mood: 'Warm' },
-  { id: 'square', mood: 'Hollow' },
-  { id: 'sawtooth', mood: 'Bright' },
+// The sounds. `id` is saved in presets; `name` is the big label and `detail` the small
+// one under it. `group` sorts them in the picker. The performer (src/audio.js) has a
+// recipe for each id. The first four are the built-in Web Audio waveforms; their ids
+// are the waveform names, so presets from before this table still load.
+export const SOUNDS = [
+  { id: 'sine', name: 'Soft', detail: 'sine', group: 'classic' },
+  { id: 'triangle', name: 'Warm', detail: 'triangle', group: 'classic' },
+  { id: 'square', name: 'Hollow', detail: 'square', group: 'classic' },
+  { id: 'sawtooth', name: 'Bright', detail: 'sawtooth', group: 'classic' },
 ];
 
 // Tone runs from 0 (darkest) to 1 (brightest); the performer maps it to a filter.
@@ -21,7 +24,7 @@ export const KEY_CYCLE_MAX = 120;
 export const DEFAULT_SETTINGS = Object.freeze({
   key: 'C',
   scale: 'major-pentatonic',
-  waveform: 'triangle',
+  sound: 'triangle',
   tone: 0.5,
   tempo: 40,
   drone: true,
@@ -46,7 +49,7 @@ export function normalizeSettings(input) {
   return {
     key: oneOf(KEYS, s.key, d.key),
     scale: oneOf(SCALES, s.scale, d.scale),
-    waveform: oneOf(WAVEFORMS, s.waveform, d.waveform),
+    sound: oneOf(SOUNDS, s.sound ?? s.waveform, d.sound), // `waveform`: the name before sounds
     tone: number(s.tone, TONE_MIN, TONE_MAX, d.tone),
     tempo: number(s.tempo, TEMPO_MIN, TEMPO_MAX, d.tempo),
     drone: typeof s.drone === 'boolean' ? s.drone : d.drone,

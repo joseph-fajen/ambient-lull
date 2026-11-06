@@ -1,23 +1,37 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULT_SETTINGS, WAVEFORMS, TONE_MIN, TONE_MAX, KEY_CYCLE_MIN, KEY_CYCLE_MAX, normalizeSettings } from '../src/settings.js';
+import { DEFAULT_SETTINGS, SOUNDS, TONE_MIN, TONE_MAX, KEY_CYCLE_MIN, KEY_CYCLE_MAX, normalizeSettings } from '../src/settings.js';
 import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX } from '../src/music.js';
+import { SOUND_RECIPES } from '../src/audio.js';
 
 test('defaults are valid and point at real table entries', () => {
   assert.deepEqual(normalizeSettings(DEFAULT_SETTINGS), DEFAULT_SETTINGS);
   assert.ok(KEYS.some(k => k.id === DEFAULT_SETTINGS.key));
   assert.equal(DEFAULT_SETTINGS.scale, 'major-pentatonic');
-  assert.ok(WAVEFORMS.some(w => w.id === DEFAULT_SETTINGS.waveform));
+  assert.ok(SOUNDS.some(w => w.id === DEFAULT_SETTINGS.sound));
   assert.equal(DEFAULT_SETTINGS.drone, true);
 });
 
-test('waveforms table: four built-in types, each with a mood name', () => {
-  assert.deepEqual(WAVEFORMS.map(w => [w.mood, w.id]),
-    [['Soft', 'sine'], ['Warm', 'triangle'], ['Hollow', 'square'], ['Bright', 'sawtooth']]);
+test('sounds table: the four classic waveforms first, each with a name and detail', () => {
+  assert.deepEqual(SOUNDS.slice(0, 4).map(w => [w.name, w.detail, w.id]),
+    [['Soft', 'sine', 'sine'], ['Warm', 'triangle', 'triangle'], ['Hollow', 'square', 'square'], ['Bright', 'sawtooth', 'sawtooth']]);
+  for (const w of SOUNDS) assert.ok(w.name && w.detail && w.group, w.id);
+  assert.equal(new Set(SOUNDS.map(w => w.id)).size, SOUNDS.length, 'ids are unique');
+});
+
+test('every sound has a recipe in the performer, and every recipe a sound', () => {
+  assert.deepEqual(Object.keys(SOUND_RECIPES).sort(), SOUNDS.map(w => w.id).sort());
+});
+
+test('presets from before sounds (saved as `waveform`) load their sound', () => {
+  assert.equal(normalizeSettings({ waveform: 'sine' }).sound, 'sine');
+  assert.equal(normalizeSettings({ waveform: 'noise' }).sound, DEFAULT_SETTINGS.sound);
+  assert.equal(normalizeSettings({ sound: 'square', waveform: 'sine' }).sound, 'square');
+  assert.ok(!('waveform' in normalizeSettings({ waveform: 'sine' })), 'the old name is dropped');
 });
 
 test('a complete valid object comes back unchanged', () => {
-  const s = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true, keyCycleSeconds: 45, harmony: 0.8, variety: 0.1, width: 0.2, drift: true };
+  const s = { key: 'F#', scale: 'dorian', sound: 'sawtooth', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true, keyCycleSeconds: 45, harmony: 0.8, variety: 0.1, width: 0.2, drift: true };
   assert.deepEqual(normalizeSettings(s), s);
 });
 
@@ -27,7 +41,7 @@ test('missing fields get defaults', () => {
 });
 
 test('unknown values fall back to defaults', () => {
-  const s = normalizeSettings({ key: 'H', scale: 'bebop', waveform: 'noise', tone: 'bright', tempo: 'fast', drone: 'yes', droneVolume: 'loud', autoKey: 'sometimes', keyCycleSeconds: 'often', harmony: 'lots', variety: 'some', width: 'wide', drift: 'yes' });
+  const s = normalizeSettings({ key: 'H', scale: 'bebop', sound: 'noise', tone: 'bright', tempo: 'fast', drone: 'yes', droneVolume: 'loud', autoKey: 'sometimes', keyCycleSeconds: 'often', harmony: 'lots', variety: 'some', width: 'wide', drift: 'yes' });
   assert.deepEqual(s, DEFAULT_SETTINGS);
 });
 
@@ -93,7 +107,8 @@ test('harmony runs 0 to 1, default 0.33, clamped', () => {
 
 test('an old preset without harmony loads with the default', () => {
   const old = { key: 'G', scale: 'dorian', waveform: 'sine', tone: 0.2, tempo: 30, drone: true, droneVolume: 0.5, autoKey: false, keyCycleSeconds: 30 };
-  assert.deepEqual(normalizeSettings(old), { ...old, harmony: 0.33, variety: 0.5, width: 0.5, drift: false });
+  const { waveform, ...rest } = old;
+  assert.deepEqual(normalizeSettings(old), { ...rest, sound: waveform, harmony: 0.33, variety: 0.5, width: 0.5, drift: false });
 });
 
 test('variety runs 0 to 1, default 0.5, clamped', () => {

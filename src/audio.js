@@ -1,6 +1,6 @@
 // Performer: turns notes into sound with Web Audio. Knows nothing about melody.
 //
-// Signal path:  voice (osc -> low-pass -> envelope -> panner)  ->  bus.input
+// Signal path:  note (sound recipe -> panner)  ->  bus.input
 //               bus.input -> dry ----------------\
 //               bus.input -> reverb -> wet -------+-> bus.master -> speakers
 //               drone -> bus.dryInput -> dry ----/  (skips the reverb)
@@ -19,16 +19,6 @@ export const DRY_LEVEL = 0.7;
 export const MASTER_LEVEL = 0.57;
 export const WET_LEVEL = 0.5;
 export const STOP_FADE = 1.5; // seconds for Stop to fade to silence
-
-// Volume matching: gain per waveform so switching doesn't jump in loudness. Matched to
-// triangle (the default) by average loudness at the middle tone; the tone setting moves
-// these by under 1 dB. Re-measure with the "volume-matched" audio check if voices change.
-export const WAVEFORM_GAIN = {
-  sine: 0.82, // -1.7 dB
-  triangle: 1,
-  square: 0.71, // -3.0 dB
-  sawtooth: 1.24, // +1.9 dB
-};
 
 export const midiToFrequency = midi => 440 * 2 ** ((midi - 69) / 12);
 
@@ -49,33 +39,62 @@ const PAN_GAIN = Math.SQRT2;
 
 export const stereoPosition = (pan, width) => pan * width * WIDTH_MAX;
 
-// The voice. Any future voice keeps this signature:
-//   (ctx, destination, time, { midi, duration, level, pan }, { waveform, tone, width })
-// `level` (default 1) scales the note's volume; `pan` (default 0) is its place.
-export function playNote(ctx, destination, time, { midi, duration, level = 1, pan = 0 }, { waveform, tone, width = 0 }) {
-  const osc = ctx.createOscillator();
-  osc.type = waveform;
-  osc.frequency.value = midiToFrequency(midi);
+// Shared by every sound: the note's volume envelope. A fade-in (`attack`, shortened
+// for very short notes) to `peak`, then a long, smooth fade to silence at `duration`.
+export function envelope(ctx, time, duration, peak, attack = ATTACK) {
+  const amp = ctx.createGain();
+  const rise = Math.min(attack, duration / 4);
+  amp.gain.setValueAtTime(0, time);
+  amp.gain.linearRampToValueAtTime(peak, time + rise);
+  amp.gain.setValueCurveAtTime(RELEASE_SHAPE.map(x => x * peak), time + rise, duration - rise);
+  return amp;
+}
 
+// Shared by every sound: the low-pass filter the Tone slider sets.
+export function toneFilter(ctx, tone) {
   const filter = ctx.createBiquadFilter();
   filter.type = 'lowpass';
   filter.frequency.value = toneToCutoff(tone);
   filter.Q.value = 0; // no resonant peak
+  return filter;
+}
 
-  const panner = ctx.createStereoPanner();
-  panner.pan.value = stereoPosition(pan, width);
+// Sound recipes, one per id in SOUNDS (src/settings.js). Each one is
+//   (ctx, out, time, { midi, duration, peak }, settings) => the source node that ends last
+// It plays one note into `out`, at most `peak` loud, silent by `duration`. playNote
+// handles volume, stereo place and cleanup, so a recipe only makes the sound.
 
-  const amp = ctx.createGain();
-  const peak = VOICE_PEAK * WAVEFORM_GAIN[waveform] * level * PAN_GAIN;
-  const attack = Math.min(ATTACK, duration / 4);
-  amp.gain.setValueAtTime(0, time);
-  amp.gain.linearRampToValueAtTime(peak, time + attack);
-  amp.gain.setValueCurveAtTime(RELEASE_SHAPE.map(x => x * peak), time + attack, duration - attack);
-
-  osc.connect(filter).connect(amp).connect(panner).connect(destination);
+// The classic sounds: one built-in waveform through the tone filter. Volume matching:
+// each has a gain so switching doesn't jump in loudness, matched to triangle (the
+// default) by average loudness at the middle tone; the tone setting moves these by under
+// 1 dB. Re-measure with the "volume-matched" audio check if a sound changes.
+const waveformSound = (type, gain) => (ctx, out, time, { midi, duration, peak }, { tone }) => {
+  const osc = ctx.createOscillator();
+  osc.type = type;
+  osc.frequency.value = midiToFrequency(midi);
+  osc.connect(toneFilter(ctx, tone)).connect(envelope(ctx, time, duration, peak * gain)).connect(out);
   osc.start(time);
   osc.stop(time + duration);
-  osc.onended = () => panner.disconnect();
+  return osc;
+};
+
+export const SOUND_RECIPES = {
+  sine: waveformSound('sine', 0.82), // -1.7 dB
+  triangle: waveformSound('triangle', 1),
+  square: waveformSound('square', 0.71), // -3.0 dB
+  sawtooth: waveformSound('sawtooth', 1.24), // +1.9 dB
+};
+
+// One note. `level` (default 1) scales its volume; `pan` (default 0) is its place.
+// The sound comes from `settings.sound`, read before each note, so changes apply live.
+export function playNote(ctx, destination, time, { midi, duration, level = 1, pan = 0 }, settings) {
+  const { sound, width = 0 } = settings;
+  const panner = ctx.createStereoPanner();
+  panner.pan.value = stereoPosition(pan, width);
+  panner.connect(destination);
+  const peak = VOICE_PEAK * level * PAN_GAIN;
+  const last = SOUND_RECIPES[sound](ctx, panner, time, { midi, duration, peak }, settings);
+  last.onended = () => panner.disconnect();
 }
 
 // A melody note from the composer, plus its harmony note if it has one. The harmony
@@ -93,7 +112,7 @@ export function playWithHarmony(ctx, destination, time, note, settings) {
 
 // Drone: a soft, sustained bass on the root, tamboura-like. A sine gives the body;
 // two slightly detuned sawtooths add a gentle beating buzz, through a low-pass whose
-// cutoff drifts slowly so the overtones shimmer. Fixed sound: ignores waveform and tone.
+// cutoff drifts slowly so the overtones shimmer. Fixed sound: ignores the sound and tone settings.
 export const DRONE_LEVEL_MAX = 1.0; // at full volume: about 10 dB louder than the melody
 export const DRONE_FADE = 2; // seconds to fade in or out (also the key-change crossfade)
 const DRONE_GLIDE = 0.08; // seconds: volume changes glide instead of jumping
