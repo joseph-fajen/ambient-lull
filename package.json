@@ -5,6 +5,7 @@
   "description": "A generative ambient music toy for the browser.",
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "test:audio": "node tests/run-audio-checks.mjs"
   }
 }

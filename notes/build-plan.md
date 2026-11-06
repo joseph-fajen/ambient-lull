@@ -27,7 +27,7 @@ Three layers. Each catches what the others can't.
 
 ### 2. Automated audio checks: the sound itself
 
-- **Tool:** a browser page, `tests/audio-checks.html`, that renders sound with `OfflineAudioContext`. This renders audio to numbers instead of the speakers, faster than real time, then shows pass/fail.
+- **Tool:** a browser page, `tests/audio-checks.html`, that renders sound with `OfflineAudioContext`. This renders audio to numbers instead of the speakers, faster than real time, then shows pass/fail. `npm run test:audio` runs it in headless Chrome and prints the results (added after v1).
 - **What it measures:**
   - **No clicks:** each note starts and ends at near-zero volume.
   - **No distortion:** the peak stays below 1.0 in the worst case, which is 120 BPM, sawtooth, brightest tone and many overlapping notes.

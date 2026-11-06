@@ -39,7 +39,15 @@ npm test
 
 These cover the pure logic: scales and keys, the melody walk (a sweep of every key × scale × 20 seeds, checking range, scale, step size and note length), harmony notes (in scale, in range and a 3rd, 4th or 5th away, for every note of every key × scale), note lengths (allowed lengths, quick notes in pairs, back on the beat), tempo to note length, note timing and Start/Stop states with a fake clock, settings validation, and presets with fake and failing storage.
 
-**Audio checks:** with the server running, open <http://localhost:8000/tests/audio-checks.html>. It renders sound offline (to numbers, not the speakers) and checks:
+**Audio checks** (Node 22+, and Chrome, Chromium or Edge):
+
+```sh
+npm run test:audio
+```
+
+This runs `tests/audio-checks.html` in a headless browser and prints the results (about 3 minutes). It exits with an error if any check fails. Set `CHROME=/path/to/browser` to choose the browser. You can also open the page yourself, with the server running, at <http://localhost:8000/tests/audio-checks.html>.
+
+The page renders sound offline (to numbers, not the speakers) and checks:
 
 - the waveforms are volume-matched
 - notes and the drone start and end without clicks
@@ -61,8 +69,9 @@ src/
   presets.js     the 4 preset slots; storage is passed in
   main.js        the page: controls, the timer loop, connecting everything
 tests/
-  *.test.js          unit tests (node --test)
-  audio-checks.html  offline audio measurements, opened in the browser
+  *.test.js            unit tests (node --test)
+  audio-checks.html    offline audio measurements, opened in the browser
+  run-audio-checks.mjs runs those in headless Chrome from the command line
 notes/           design thinking and the build plan
 ```
 
@@ -80,4 +89,3 @@ notes/           design thinking and the build plan
 ## Known limitations
 
 - Some browsers slow down timers in background tabs. If yours does, notes may come unevenly while the tab is hidden, though never in a burst when you return. Chrome doesn't slow down tabs that are playing audio.
-- The audio checks run in the browser only. There's no command-line runner yet.
