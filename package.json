@@ -1,0 +1,10 @@
+{
+  "name": "ambient-toy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A generative ambient music toy for the browser.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

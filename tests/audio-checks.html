@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audio checks</title>
+  <link rel="icon" href="data:,">
+  <style>
+    body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; max-width: 50rem; }
+    .pass { color: #17803d; } .fail { color: #c62828; font-weight: bold; }
+    li { margin: 0.2rem 0; }
+  </style>
+</head>
+<body>
+  <h1>Audio checks</h1>
+  <p>Renders sound offline (to numbers, not the speakers) and measures it.</p>
+  <p id="status">Running…</p>
+  <ul id="results"></ul>
+  <script type="module">
+    import { playNote, createBus, startDrone, DRONE_FADE } from '../src/audio.js';
+    import { DEFAULT_SETTINGS } from '../src/settings.js';
+    import { nextNote, beatInterval, createRandom, dronePitch } from '../src/music.js';
+    import { WAVEFORMS } from '../src/settings.js';
+    import { LOOKAHEAD } from '../src/scheduler.js';
+
+    const RATE = 44100;
+    const results = [];
+
+    function report(ok, name, detail) {
+      results.push(ok);
+      const li = document.createElement('li');
+      li.className = ok ? 'pass' : 'fail';
+      li.textContent = `${ok ? 'PASS' : 'FAIL'}  ${name} — ${detail}`;
+      document.getElementById('results').append(li);
+    }
+
+    async function render(seconds, build) {
+      const ctx = new OfflineAudioContext(2, Math.ceil(seconds * RATE), RATE);
+      build(ctx);
+      return ctx.startRendering();
+    }
+
+    // Loudest absolute sample between two times (seconds), across channels.
+    function peak(buffer, from = 0, to = buffer.duration) {
+      let max = 0;
+      const a = Math.max(0, Math.floor(from * RATE));
+      const b = Math.min(buffer.length, Math.ceil(to * RATE));
+      for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+        const data = buffer.getChannelData(ch);
+        for (let i = a; i < b; i++) max = Math.max(max, Math.abs(data[i]));
+      }
+      return max;
+    }
+
+    // Average loudness (root mean square) between two times, across channels.
+    function rms(buffer, from, to) {
+      let sum = 0, n = 0;
+      const a = Math.floor(from * RATE), b = Math.ceil(to * RATE);
+      for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+        const data = buffer.getChannelData(ch);
+        for (let i = a; i < b; i++) { sum += data[i] * data[i]; n++; }
+      }
+      return Math.sqrt(sum / n);
+    }
+
+    const dB = x => (x > 0 ? (20 * Math.log10(x)).toFixed(1) : '-inf') + ' dB';
+
+    // 1. No clicks: a single dry note starts and ends at near-zero volume.
+    // Shortest note length (sharpest fades), brightest tone, lowest/middle/highest pitch.
+    async function checkClicks() {
+      const start = 0.1, duration = 2.5, end = start + duration;
+      let worstStart = 0, worstEnd = 0, worstAfter = 0;
+      for (const w of WAVEFORMS) {
+        for (const midi of [42, 60, 77]) {
+          const buf = await render(end + 0.3, ctx =>
+            playNote(ctx, ctx.destination, start, { midi, duration }, { waveform: w.id, tone: 1 }));
+          const notePeak = peak(buf);
+          worstStart = Math.max(worstStart, peak(buf, start, start + 0.005) / notePeak);
+          worstEnd = Math.max(worstEnd, peak(buf, end - 0.02, end) / notePeak);
+          worstAfter = Math.max(worstAfter, peak(buf, end + 0.001));
+        }
+      }
+      report(worstStart < 0.03, 'No click at note start',
+        `first 5 ms reaches ${(worstStart * 100).toFixed(2)}% of the note's peak (limit 3%)`);
+      report(worstEnd < 0.001, 'No click at note end',
+        `last 20 ms reaches ${(worstEnd * 100).toFixed(3)}% of the note's peak (limit 0.1%)`);
+      report(worstAfter < 1e-6, 'Silent after the note ends', `peak after end ${worstAfter.toExponential(1)}`);
+    }
+
+    // 2. No distortion: a dense melody through the full bus (dry + reverb) never reaches 1.0.
+    async function checkPeak() {
+      let worst = { level: 0 };
+      for (const w of WAVEFORMS) {
+        for (const tempo of [120, 20]) {
+          for (const key of ['F#', 'F']) { // lowest and highest pitch ranges
+            for (const seed of [1, 2]) {
+              const settings = { key, scale: 'major-pentatonic', waveform: w.id, tone: 1, tempo };
+              const rng = createRandom(seed);
+              const playFor = 20;
+              const buf = await render(playFor + 12, ctx => {
+                const bus = createBus(ctx);
+                startDrone(ctx, bus.dryInput, 0.05, dronePitch(key), 1); // loudest drone
+                let prev = null;
+                for (let t = 0.05; t < playFor; t += beatInterval(tempo)) {
+                  const note = nextNote(prev, settings, rng);
+                  playNote(ctx, bus.input, t, note, settings);
+                  prev = note.midi;
+                }
+              });
+              const level = peak(buf);
+              if (level > worst.level) worst = { level, label: `${w.mood} (${w.id}), ${tempo} BPM, key ${key}` };
+            }
+          }
+        }
+      }
+      report(worst.level < 1, 'Peak stays below 1.0',
+        `loudest: ${worst.level.toFixed(3)} (${dB(worst.level)}) — ${worst.label}, brightest tone, drone on`);
+    }
+
+    // 3. Stop is clean: after the fade, the output (notes and reverb tail) is silent.
+    // Notes are booked up to LOOKAHEAD past Stop, as the real timer loop would.
+    async function checkStop() {
+      const stopAt = 6;
+      const settings = { key: 'C', scale: 'major-pentatonic', waveform: 'sawtooth', tone: 1, tempo: 60 };
+      let fadeEnd;
+      const buf = await render(stopAt + 12, ctx => {
+        const bus = createBus(ctx);
+        const rng = createRandom(3);
+        let prev = null;
+        for (let t = 0.05; t < stopAt + LOOKAHEAD; t += beatInterval(settings.tempo)) {
+          const note = nextNote(prev, settings, rng);
+          playNote(ctx, bus.input, t, note, settings);
+          prev = note.midi;
+        }
+        startDrone(ctx, bus.dryInput, 0.05, dronePitch(settings.key), 1).release(stopAt);
+        fadeEnd = bus.fadeOut(stopAt);
+      });
+      const playing = peak(buf, 0, stopAt);
+      const after = peak(buf, fadeEnd + 0.001);
+      report(playing > 0.05 && after < 1e-6, 'Silent after Stop fades out',
+        `playing peak ${playing.toFixed(3)}, after the ${(fadeEnd - stopAt).toFixed(1)} s fade ${after.toExponential(1)}`);
+    }
+
+    // 4. Drone: no click when it starts, silent after release, quieter than the melody.
+    async function checkDrone() {
+      const start = 0.1, releaseAt = 4;
+      let worstStart = 0, worstAfter = 0;
+      for (const midi of [dronePitch('F#'), dronePitch('F')]) { // lowest and highest drone
+        const buf = await render(releaseAt + DRONE_FADE + 0.5, ctx =>
+          startDrone(ctx, ctx.destination, start, midi, 1).release(releaseAt));
+        worstStart = Math.max(worstStart, peak(buf, start, start + 0.005) / peak(buf));
+        worstAfter = Math.max(worstAfter, peak(buf, releaseAt + DRONE_FADE + 0.06));
+      }
+      report(worstStart < 0.03, 'No click when the drone starts',
+        `first 5 ms reaches ${(worstStart * 100).toFixed(2)}% of its peak (limit 3%)`);
+      report(worstAfter < 1e-6, 'Silent after the drone is released', `peak after ${worstAfter.toExponential(1)}`);
+
+      // Default sound (Warm, middle tone, 40 BPM, C), melody alone vs drone alone, through the bus.
+      const settings = { key: 'C', scale: 'major-pentatonic', waveform: 'triangle', tone: 0.5, tempo: 40 };
+      const melody = await render(30, ctx => {
+        const bus = createBus(ctx);
+        const rng = createRandom(5);
+        let prev = null;
+        for (let t = 0.05; t < 30; t += beatInterval(settings.tempo)) {
+          const note = nextNote(prev, settings, rng);
+          playNote(ctx, bus.input, t, note, settings);
+          prev = note.midi;
+        }
+      });
+      const melodyLevel = rms(melody, 8, 28);
+      const gapsAt = async volume => {
+        const gaps = [];
+        for (const key of ['F#', 'C', 'F']) { // lowest, default and highest drone
+          const droneOnly = await render(30, ctx => startDrone(ctx, createBus(ctx).dryInput, 0.05, dronePitch(key), volume));
+          gaps.push(20 * Math.log10(melodyLevel / rms(droneOnly, 8, 28)));
+        }
+        return gaps;
+      };
+      const gaps = await gapsAt(DEFAULT_SETTINGS.droneVolume);
+      const spread = Math.max(...gaps) - Math.min(...gaps);
+      report(Math.min(...gaps) >= 3 && spread <= 3, 'Drone sits under the melody at default volume, evenly across keys',
+        `drone is ${gaps.map(g => g.toFixed(1)).join(' / ')} dB quieter than the melody in F♯ / C / F ` +
+        `(needs 3 dB or more, with under 3 dB between keys)`);
+      const loudest = await gapsAt(1);
+      report(Math.min(...loudest) >= 0, 'Drone at full volume is no louder than the melody',
+        `drone is ${loudest.map(g => g.toFixed(1)).join(' / ')} dB quieter than the melody in F♯ / C / F (needs 0 dB or more)`);
+    }
+
+    // 5. Volume matching: every waveform has about the same average loudness, at the
+    // darkest, middle and brightest tone. Same melody for each, dry.
+    async function checkVolumeMatch() {
+      const lines = [];
+      let worstSpread = 0;
+      for (const tone of [0, 0.5, 1]) {
+        const levels = [];
+        for (const w of WAVEFORMS) {
+          const settings = { key: 'C', scale: 'major-pentatonic', waveform: w.id, tone, tempo: 60 };
+          const buf = await render(20, ctx => {
+            const rng = createRandom(9);
+            let prev = null;
+            for (let t = 0.05; t < 20; t += beatInterval(settings.tempo)) {
+              const note = nextNote(prev, settings, rng);
+              playNote(ctx, ctx.destination, t, note, settings);
+              prev = note.midi;
+            }
+          });
+          levels.push(20 * Math.log10(rms(buf, 4, 18)));
+        }
+        const spread = Math.max(...levels) - Math.min(...levels);
+        worstSpread = Math.max(worstSpread, spread);
+        lines.push(`tone ${tone}: ` + WAVEFORMS.map((w, i) => `${w.id} ${levels[i].toFixed(1)}`).join(', ') + ` dB (spread ${spread.toFixed(1)})`);
+      }
+      report(worstSpread <= 2, 'Waveforms are volume-matched (within 2 dB)', lines.join(' | '));
+    }
+
+    try {
+      await checkVolumeMatch();
+      await checkClicks();
+      await checkDrone();
+      await checkPeak();
+      await checkStop();
+    } catch (err) {
+      report(false, 'Checks crashed', String(err));
+    }
+    const failed = results.filter(ok => !ok).length;
+    const status = document.getElementById('status');
+    status.textContent = failed ? `${failed} check(s) failed.` : `All ${results.length} checks passed.`;
+    status.className = failed ? 'fail' : 'pass';
+    document.body.dataset.result = failed ? 'fail' : 'pass';
+  </script>
+</body>
+</html>

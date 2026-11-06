@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ambient Toy</title>
+  <link rel="icon" href="data:,">
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; margin: 2rem auto; max-width: 32rem; padding: 0 1rem; }
+    .controls { display: grid; grid-template-columns: max-content 1fr; gap: 0.75rem 1rem; align-items: center; margin: 1.5rem 0; }
+    .tempo, .range { display: flex; gap: 0.75rem; align-items: center; }
+    .tempo input, .range input[type=range] { flex: 1; }
+    .waves { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+    .waves label { display: flex; flex-direction: column; align-items: center; padding: 0.4rem 0.2rem;
+                   border: 1px solid #bbb; border-radius: 6px; cursor: pointer; line-height: 1.2; }
+    .waves label:has(input:checked) { border-color: #335; background: #eef0f8; }
+    .waves label:has(input:focus-visible) { outline: 2px solid #335; outline-offset: 2px; }
+    .waves input { position: absolute; opacity: 0; pointer-events: none; }
+    .waves small { color: #666; font-size: 0.75em; }
+    output { min-width: 4.5rem; font-variant-numeric: tabular-nums; }
+    .hint { color: #666; font-size: 0.85em; }
+    button { font: inherit; padding: 0.4rem 1.2rem; }
+    h2 { font-size: 1.1rem; margin-top: 2rem; }
+    .presets { display: grid; gap: 0.5rem; }
+    .preset { display: flex; gap: 0.5rem; }
+    .preset input { flex: 1; min-width: 0; font: inherit; padding: 0.3rem 0.5rem; }
+    .preset button { padding: 0.3rem 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Ambient Toy</h1>
+
+  <div class="controls">
+    <label for="key">Key</label>
+    <select id="key"></select>
+
+    <label for="scale">Scale</label>
+    <select id="scale"></select>
+
+    <label for="tempo">Tempo</label>
+    <div class="tempo">
+      <input id="tempo" type="range" step="1">
+      <output id="tempo-value" for="tempo"></output>
+    </div>
+
+    <span id="waveform-label">Sound</span>
+    <div class="waves" role="radiogroup" aria-labelledby="waveform-label" id="waveform"></div>
+
+    <label for="tone">Tone</label>
+    <div class="range">
+      <span class="hint">Dark</span>
+      <input id="tone" type="range" step="0.01">
+      <span class="hint">Bright</span>
+    </div>
+
+    <label for="drone">Drone</label>
+    <div class="range">
+      <input id="drone" type="checkbox">
+      <span class="hint">Quiet</span>
+      <input id="drone-volume" type="range" min="0" max="1" step="0.01" aria-label="Drone volume">
+      <span class="hint">Loud</span>
+    </div>
+  </div>
+
+  <button id="start" type="button">Start</button>
+  <button id="stop" type="button">Stop</button>
+
+  <h2>Presets</h2>
+  <div id="presets" class="presets"></div>
+  <p id="preset-note" class="hint" hidden>This browser isn't letting the page store data, so presets will be lost when you close it.</p>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
