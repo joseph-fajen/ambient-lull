@@ -16,6 +16,7 @@ Started 2026-11-06, after v1 and the "After v1" extras were built (see `build-pl
 
 ### Harmony: present most of the time
 
+- **Decided (2026-11-06): parked.** No changes to Harmony for now. The notes below are kept for later.
 - **Wanted:** harmony about 75% of the time.
 - **Catch:** today the slider tops out at harmony on **every other note** (`HARMONY_CHANCE_MAX` = 0.5 in `src/music.js`), so 75% of notes isn't reachable yet.
 - **Open:** "75% of the time" can mean two different things:
@@ -57,7 +58,43 @@ Started 2026-11-06, after v1 and the "After v1" extras were built (see `build-pl
   - **Choir-like:** filters shaped like vowel sounds ("ooh", "aah")
 - **Structure:** `design-thinking.md` §6.4 already planned for this: the note-player takes the sound settings as input, so a new "voice" can plug in. Each sound becomes a recipe: synthesis method, envelope, filter.
 - **Acceptance test:** someone who isn't a musician can tell every sound apart without looking. The audio checks keep the rest honest: volume-matched, no clicks, peak below the limit.
-- **Open:** replace the four waveforms, or keep the best one or two and add new families? How many sounds in total (5–6?)?
+- **Decided (2026-11-06):** keep all four current sounds, and explore about **8 new ones** with clearly different character. 12 in total.
+
+### Candidate 8: two groups of four
+
+Picked to spread across the things a listener hears first: how a note starts, whether it fades or holds, and how it moves while ringing.
+
+**Struck and plucked:** a clear start, then a natural fade.
+
+| Name (idea) | Like | How it's made |
+| --- | --- | --- |
+| Glass | glass bell | FM synthesis with a non-whole-number ratio: shimmering, bell-like overtones that mellow as it fades |
+| Kalimba | thumb piano | FM, short and woody |
+| Harp | plucked string | Karplus-Strong: a burst of noise through a short tuned delay, which becomes a plucked tone |
+| Tine | electric piano | FM, a soft bell-like "tine" over a warm body |
+
+**Sustained:** a slow swell, held, with movement.
+
+| Name (idea) | Like | How it's made |
+| --- | --- | --- |
+| Pad | synth pad | several detuned oscillators with a slow swell (a cousin of the drone) |
+| Strings | bowed strings | detuned sawtooths, slow bow-like attack, gentle vibrato |
+| Choir | "ooh" voices | a buzzy source through vowel-shaped filters |
+| Breath | flute | a sine plus a little filtered noise, slight vibrato |
+
+- **Keeping the lull:** struck sounds start faster than today's 0.4 s fade-in. Give them a soft start (still no click) and keep the long reverb, so they stay gentle.
+- **Tone slider:** each recipe decides what Tone means for it (the filter for most; brightness of the FM overtones for the bells).
+
+### How to build it
+
+1. **Refactor first, no sound change.** Make each sound an entry in a `SOUNDS` table (label, smaller technical name, recipe). The current four share one recipe. The audio checks should prove the output is identical, as with stereo's Mono check.
+2. **Prototype the new recipes,** one group at a time.
+3. **Listen:** render a short clip of each sound (the same seeded melody for all) to audio files. They can be played on a phone, and used for a blind test.
+4. **Keep the checks:** extend the volume-matching, no-click and peak checks to every sound.
+
+- **Settings:** presets store `waveform: "sine"` today. Either keep the field name for old presets, or rename it to `sound` and accept old values.
+- **UI note:** 12 sounds won't fit the current row of buttons. Group them (Classic / Struck / Sustained) when we get to the UI.
+- **Open:** do the 8 candidates cover what you want? Any to swap (for example organ, singing bowl, music box)?
 
 ## 4. A more beautiful UI
 
@@ -65,6 +102,8 @@ Started 2026-11-06, after v1 and the "After v1" extras were built (see `build-pl
 - **Open:** look and feel references, and whether visuals (something moving with the music) are part of it.
 
 ## 5. Mobile: link, web app, or phone app
+
+- **Decided (2026-11-06): back burner.** Not urgent. The notes below are kept for later.
 
 The options, cheapest first:
 
