@@ -1,6 +1,6 @@
-# Ambient Toy
+# Ambient Lull
 
-A generative ambient music toy that runs in the browser. Press Start and hear an endless, gentle melody over a soft root drone, until you press Stop. Every combination of settings is meant to sound pleasant.
+Generative ambient music that runs in the browser: a calm, ever-changing backdrop. Press Start and hear an endless, gentle melody over a soft root drone, until you press Stop. Every combination of settings is meant to sound pleasant.
 
 Plain HTML and JavaScript modules, using the Web Audio API directly. No build step and no dependencies.
 

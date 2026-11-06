@@ -3,6 +3,7 @@
 // session if storage is missing or failing; they just don't survive a reload.
 import { normalizeSettings } from './settings.js';
 
+// Kept from the project's first name, so presets saved before the rename still load.
 export const STORAGE_KEY = 'ambient-toy.presets';
 export const SLOT_COUNT = 4;
 export const NAME_MAX = 24;

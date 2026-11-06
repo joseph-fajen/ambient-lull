@@ -1,8 +1,8 @@
 {
-  "name": "ambient-toy",
+  "name": "ambient-lull",
   "version": "0.1.0",
   "private": true,
-  "description": "A generative ambient music toy for the browser.",
+  "description": "Generative ambient music for the browser: a calm, ever-changing backdrop.",
   "type": "module",
   "scripts": {
     "test": "node --test",
