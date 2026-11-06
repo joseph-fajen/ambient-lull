@@ -27,6 +27,7 @@ All changes apply live, from the next note (drone volume applies immediately).
 | Tone | A low-pass filter from Dark to Bright, limited so even Bright never gets harsh. |
 | Width | Stereo, from Mono to Wide. Each melody note gets its own place left to right, and its harmony note sits on the opposite side. The drone stays in the middle. Even at Wide, no note is entirely in one ear. Default: gently wide, about halfway. |
 | Harmony | Now and then a second, quieter note sounds with the melody: a 3rd, 4th or 5th, always in the scale and inside the melody's range. Harmony notes always ring long, as long as a 4-beat note, whatever the melody's rhythm. The slider sets how often, from Never to Often (about every other note). Default: about 1 note in 6. |
+| Drift | When on, the Harmony amount rises and falls on its own over 3 minutes: from a quarter of the slider's setting up to 1.75 times it (at most Often). It starts at the slider and rises first, timed from Start. The slider doesn't move, and Never stays Never. Off by default. |
 | Drone | A soft bass on the root, two octaves down (on by default). Key changes crossfade it. The slider sets its volume, from silent up to about 10 dB louder than the melody. |
 | Presets | 4 named slots. Save stores the current settings (asking first if the slot is filled); Load applies them live. Kept in the browser's localStorage. |
 
@@ -38,7 +39,7 @@ All changes apply live, from the next note (drone volume applies immediately).
 npm test
 ```
 
-These cover the pure logic: scales and keys, the melody walk (a sweep of every key × scale × 20 seeds, checking range, scale, step size and note length), harmony notes (in scale, in range and a 3rd, 4th or 5th away, for every note of every key × scale), stereo places (both sides, harmony opposite the melody), note lengths (allowed lengths, quick notes in pairs, back on the beat), tempo to note length, note timing and Start/Stop states with a fake clock, settings validation, and presets with fake and failing storage.
+These cover the pure logic: scales and keys, the melody walk (a sweep of every key × scale × 20 seeds, checking range, scale, step size and note length), harmony notes (in scale, in range and a 3rd, 4th or 5th away, for every note of every key × scale), stereo places (both sides, harmony opposite the melody), harmony drift (its curve, Never stays Never, the slider untouched), note lengths (allowed lengths, quick notes in pairs, back on the beat), tempo to note length, note timing and Start/Stop states with a fake clock, settings validation, and presets with fake and failing storage.
 
 **Audio checks** (Node 22+, and Chrome, Chromium or Edge):
 
@@ -46,7 +47,7 @@ These cover the pure logic: scales and keys, the melody walk (a sweep of every k
 npm run test:audio
 ```
 
-This runs `tests/audio-checks.html` in a headless browser and prints the results (about 3 minutes). It exits with an error if any check fails. Set `CHROME=/path/to/browser` to choose the browser. You can also open the page yourself, with the server running, at <http://localhost:8000/tests/audio-checks.html>.
+This runs `tests/audio-checks.html` in a headless browser and prints the results (about 5 minutes). It exits with an error if any check fails. Set `CHROME=/path/to/browser` to choose the browser. You can also open the page yourself, with the server running, at <http://localhost:8000/tests/audio-checks.html>.
 
 The page renders sound offline (to numbers, not the speakers) and checks:
 
@@ -58,13 +59,14 @@ The page renders sound offline (to numbers, not the speakers) and checks:
 - harmony adds little loudness (under 1 dB at default)
 - varied rhythm stays within 3 dB of steady in loudness
 - Width places notes left to right without changing loudness (Mono is centred)
+- Drift keeps harmony within its loudness limit through a whole rise and fall
 - the output is silent after Stop
 
 ## How it's built
 
 ```
 src/
-  music.js       composer (pure): keys, scales, circle of fifths, the melody walk, harmony notes, note lengths (rhythm), stereo places, drone pitch, tempo → note length
+  music.js       composer (pure): keys, scales, circle of fifths, the melody walk, harmony notes, note lengths (rhythm), stereo places, harmony drift, drone pitch, tempo → note length
   settings.js    the settings object (pure): defaults, waveform table, validation
   scheduler.js   timing (pure): which notes are due in the lookahead window; Start/Stop states; key-cycle countdown
   audio.js       performer: the note voice (with its stereo place), harmony level, the drone, reverb, and each run's output chain

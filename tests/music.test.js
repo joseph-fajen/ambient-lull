@@ -4,6 +4,7 @@ import {
   KEYS, SCALES, CENTER_MIDI, TEMPO_MIN, TEMPO_MAX, NOTE_LENGTH_MIN, NOTE_LENGTH_MAX,
   rootMidi, notePool, nextNote, noteLength, createRandom, createComposer, dronePitch, nextKeyInCircle,
   harmonyNote, HARMONY_INTERVALS, HARMONY_CHANCE_MAX, NOTE_LENGTHS,
+  harmonyAmount, DRIFT_PERIOD, DRIFT_DEPTH,
 } from '../src/music.js';
 
 const settingsFor = (key, scale, tempo = 40) => ({ key, scale, tempo });
@@ -395,6 +396,79 @@ test('stereo place draws its own random numbers: melody, harmony and rhythm stay
       const x = a.next(), y = b.next();
       assert.equal(x.pan, y.pan);
       assert.equal(x.midi, y.midi);
+    }
+  }
+});
+
+test('drift off: the harmony amount is the slider, at any time', () => {
+  for (const harmony of [0, 0.33, 1]) {
+    for (const t of [0, 17, 90, 1000]) assert.equal(harmonyAmount({ harmony, drift: false }, t), harmony);
+    assert.equal(harmonyAmount({ harmony }, 50), harmony, 'missing drift means off');
+  }
+});
+
+test('drift: a slow wave over a few minutes, starting at the slider', () => {
+  assert.ok(DRIFT_PERIOD >= 120 && DRIFT_PERIOD <= 300, 'a few minutes');
+  const h = 0.4;
+  const at = t => harmonyAmount({ harmony: h, drift: true }, t);
+  assert.ok(Math.abs(at(0) - h) < 1e-12);
+  assert.ok(Math.abs(at(DRIFT_PERIOD / 4) - h * (1 + DRIFT_DEPTH)) < 1e-12, 'highest a quarter of the way');
+  assert.ok(Math.abs(at((3 * DRIFT_PERIOD) / 4) - h * (1 - DRIFT_DEPTH)) < 1e-12, 'lowest three quarters of the way');
+  assert.ok(Math.abs(at(DRIFT_PERIOD) - h) < 1e-12, 'back where it started');
+  // Slow: it never changes by more than 3% of the slider in a second.
+  for (let t = 0; t < DRIFT_PERIOD; t++) assert.ok(Math.abs(at(t + 1) - at(t)) < 0.03 * h, `t ${t}`);
+});
+
+test('drift: averages out at the slider, and stays between 0 and 1', () => {
+  for (const h of [0.1, 0.33, 0.5]) {
+    let sum = 0;
+    for (let t = 0; t < DRIFT_PERIOD; t++) sum += harmonyAmount({ harmony: h, drift: true }, t);
+    assert.ok(Math.abs(sum / DRIFT_PERIOD - h) < 0.002, `mean at ${h}`);
+  }
+  for (const h of [0, 0.2, 0.7, 1]) {
+    for (let t = 0; t < 2 * DRIFT_PERIOD; t += 3) {
+      const a = harmonyAmount({ harmony: h, drift: true }, t);
+      assert.ok(a >= 0 && a <= 1, `${h} at ${t}: ${a}`);
+    }
+  }
+});
+
+test('drift: Never stays Never', () => {
+  for (let t = 0; t < DRIFT_PERIOD; t += 5) assert.equal(harmonyAmount({ harmony: 0, drift: true }, t), 0);
+  const composer = createComposer({ ...settingsFor('C', 'major'), harmony: 0, drift: true }, createRandom(1));
+  for (let i = 0; i < 300; i++) assert.equal(composer.next(i).harmony, null);
+});
+
+test('composer with drift: more harmony on the way up than on the way down', () => {
+  const settings = { ...settingsFor('D', 'dorian'), harmony: 0.4, drift: true };
+  const share = (from, to) => {
+    let n = 0, total = 0;
+    for (let seed = 1; seed <= 10; seed++) {
+      const composer = createComposer(settings, createRandom(seed));
+      for (let t = 0; t < DRIFT_PERIOD; t += 0.5) {
+        const note = composer.next(t);
+        if (t >= from && t < to) { total++; if (note.harmony !== null) n++; }
+      }
+    }
+    return n / total;
+  };
+  const high = share(DRIFT_PERIOD * 0.15, DRIFT_PERIOD * 0.35); // around the top
+  const low = share(DRIFT_PERIOD * 0.65, DRIFT_PERIOD * 0.85); // around the bottom
+  assert.ok(high > 0.3 && high < 0.4, `high ${high}`); // about 0.4 x 1.7 / 2
+  assert.ok(low > 0.03 && low < 0.1, `low ${low}`); // about 0.4 x 0.3 / 2
+  assert.equal(settings.harmony, 0.4, 'the slider value is not changed');
+});
+
+test('drift does not change the melody, rhythm or stereo places', () => {
+  for (let seed = 1; seed <= 10; seed++) {
+    const base = { ...settingsFor('A', 'lydian'), harmony: 0.5, variety: 0.5 };
+    const a = createComposer({ ...base, drift: false }, createRandom(seed));
+    const b = createComposer({ ...base, drift: true }, createRandom(seed));
+    for (let i = 0; i < 100; i++) {
+      const x = a.next(i * 2), y = b.next(i * 2);
+      assert.equal(x.midi, y.midi);
+      assert.equal(x.beats, y.beats);
+      assert.equal(x.pan, y.pan);
     }
   }
 });

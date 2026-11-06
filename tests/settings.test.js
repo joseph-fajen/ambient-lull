@@ -17,7 +17,7 @@ test('waveforms table: four built-in types, each with a mood name', () => {
 });
 
 test('a complete valid object comes back unchanged', () => {
-  const s = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true, keyCycleSeconds: 45, harmony: 0.8, variety: 0.1, width: 0.2 };
+  const s = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true, keyCycleSeconds: 45, harmony: 0.8, variety: 0.1, width: 0.2, drift: true };
   assert.deepEqual(normalizeSettings(s), s);
 });
 
@@ -27,7 +27,7 @@ test('missing fields get defaults', () => {
 });
 
 test('unknown values fall back to defaults', () => {
-  const s = normalizeSettings({ key: 'H', scale: 'bebop', waveform: 'noise', tone: 'bright', tempo: 'fast', drone: 'yes', droneVolume: 'loud', autoKey: 'sometimes', keyCycleSeconds: 'often', harmony: 'lots', variety: 'some', width: 'wide' });
+  const s = normalizeSettings({ key: 'H', scale: 'bebop', waveform: 'noise', tone: 'bright', tempo: 'fast', drone: 'yes', droneVolume: 'loud', autoKey: 'sometimes', keyCycleSeconds: 'often', harmony: 'lots', variety: 'some', width: 'wide', drift: 'yes' });
   assert.deepEqual(s, DEFAULT_SETTINGS);
 });
 
@@ -93,7 +93,7 @@ test('harmony runs 0 to 1, default 0.33, clamped', () => {
 
 test('an old preset without harmony loads with the default', () => {
   const old = { key: 'G', scale: 'dorian', waveform: 'sine', tone: 0.2, tempo: 30, drone: true, droneVolume: 0.5, autoKey: false, keyCycleSeconds: 30 };
-  assert.deepEqual(normalizeSettings(old), { ...old, harmony: 0.33, variety: 0.5, width: 0.5 });
+  assert.deepEqual(normalizeSettings(old), { ...old, harmony: 0.33, variety: 0.5, width: 0.5, drift: false });
 });
 
 test('variety runs 0 to 1, default 0.5, clamped', () => {
@@ -110,4 +110,10 @@ test('width runs 0 (mono) to 1 (wide), default 0.5, clamped', () => {
   assert.equal(normalizeSettings({ width: 4 }).width, 1);
   assert.equal(normalizeSettings({ width: -1 }).width, 0);
   assert.equal(normalizeSettings({ width: 'wide' }).width, 0.5);
+});
+
+test('drift is a true/false setting, off by default', () => {
+  assert.equal(DEFAULT_SETTINGS.drift, false);
+  assert.equal(normalizeSettings({ drift: true }).drift, true);
+  for (const junk of [1, 'true', null]) assert.equal(normalizeSettings({ drift: junk }).drift, false);
 });

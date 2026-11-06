@@ -17,6 +17,7 @@ let ctx = null;
 let bus = null; // the current run's output; a stopped run's bus fades out on its own
 let timer = null;
 let composer = null;
+let runStart = 0; // audio-clock time of Start: drift is timed from here
 let lastBeats = 1; // length of the last note booked, in beats: the gap before the next
 let drone = null; // the current drone voice, if any
 let droneMidi = null; // its pitch (null: no drone)
@@ -31,7 +32,7 @@ function tick() {
   }
   for (const time of transport.due(ctx.currentTime, () => lastBeats * beatInterval(settings.tempo))) {
     updateDrone(time);
-    const note = composer.next();
+    const note = composer.next(time - runStart);
     lastBeats = note.beats;
     playWithHarmony(ctx, bus.input, time, note, settings);
   }
@@ -53,6 +54,7 @@ async function start() {
   if (!transport.start(ctx.currentTime)) return; // already playing
   bus = createBus(ctx);
   composer = createComposer(settings, Math.random);
+  runStart = ctx.currentTime;
   lastBeats = 1;
   drone = null;
   droneMidi = null;
@@ -102,6 +104,7 @@ const toneSlider = document.getElementById('tone');
 const harmonySlider = document.getElementById('harmony');
 const varietySlider = document.getElementById('variety');
 const widthSlider = document.getElementById('width');
+const driftToggle = document.getElementById('drift');
 
 const fillSelect = (select, table) => select.replaceChildren(...table.map(e => new Option(e.name, e.id)));
 fillSelect(keySelect, KEYS);
@@ -138,6 +141,7 @@ function showSettings() {
   harmonySlider.value = settings.harmony;
   varietySlider.value = settings.variety;
   widthSlider.value = settings.width;
+  driftToggle.checked = settings.drift;
 }
 
 // Restart the 30-second key countdown (on a manual key change, switching cycling on,
@@ -173,6 +177,7 @@ toneSlider.addEventListener('input', () => { settings.tone = Number(toneSlider.v
 harmonySlider.addEventListener('input', () => { settings.harmony = Number(harmonySlider.value); });
 varietySlider.addEventListener('input', () => { settings.variety = Number(varietySlider.value); });
 widthSlider.addEventListener('input', () => { settings.width = Number(widthSlider.value); });
+driftToggle.addEventListener('change', () => { settings.drift = driftToggle.checked; });
 showSettings();
 
 // Presets: 4 named slots. Loading applies live, like any other change.

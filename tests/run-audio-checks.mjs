@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PAGE = 'tests/audio-checks.html';
-const TIMEOUT_MS = 10 * 60 * 1000; // the checks take about 3 minutes
+const TIMEOUT_MS = 10 * 60 * 1000; // the checks take about 5 minutes
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript' };
 
 const BROWSERS = [
@@ -98,7 +98,7 @@ try {
   const evaluate = async expression =>
     (await send('Runtime.evaluate', { expression, returnByValue: true }, sessionId)).result?.result?.value;
 
-  console.log(`Running ${PAGE} in ${browserPath.split('/').pop()} (about 3 minutes)…`);
+  console.log(`Running ${PAGE} in ${browserPath.split('/').pop()} (about 5 minutes)…`);
   await send('Page.navigate', { url: pageUrl }, sessionId);
   const started = Date.now();
   let outcome;

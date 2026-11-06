@@ -233,6 +233,15 @@ Features and fixes added after milestone 7, each built and tested the same way. 
 - Tests: every note's place is between −1 and 1 and reaches both sides; harmony is always opposite; places don't change when harmony or rhythm change, and the melody doesn't either; settings and old presets.
 - Audio checks: Mono gives 0.000 dB between left and right; at Wide an edge note leans 16 dB to its side with 0.000 dB change in overall level; the mix is +0.07 dB vs Mono at the default and at Wide (limit ±0.5); the peak check now runs at full width (worst of 72: 0.834); the click check includes notes placed left and right. Harmony now adds +0.8 dB at the default and +1.1 dB at full.
 
+### Slow drift
+- A toggle labelled Drift, under Harmony (`drift`, default off, saved in presets; old presets load with it off).
+- When on, the harmony amount follows a slow sine wave: `harmonyAmount(settings, seconds)` in `src/music.js`. It's the slider × (1 + 0.75 × sin), from ¼× to 1.75× the slider, capped at 1, with a period of 180 s (`DRIFT_PERIOD`, `DRIFT_DEPTH`). It starts at the slider and rises first.
+- Proportional rather than ± a fixed amount, so Never stays Never; at the default (0.33) it goes from about 1 in 25 notes to about 1 in 3.
+- Timed from Start on the audio clock: the composer's `next(seconds)` takes each note's time since Start. The setting itself never changes, so the slider doesn't move. Toggling it applies from the next note.
+- Drift never takes harmony above 1, so the existing peak check (harmony at full) already covers it.
+- Tests: off means the slider at any time; the curve's start, top, bottom and period; slow (at most 3% of the slider per second); averages to the slider; always 0–1; Never stays Never; more harmony notes near the top than the bottom; the slider value untouched; the melody, rhythm and places unchanged.
+- Audio check: each 30 s of a whole cycle vs the same seed with no harmony. At the default: +0.0 to +1.0 dB; at full: +0.1 to +1.2 dB (limit +1.5 dB, the same as harmony at full).
+
 ### Listening checks for these
 - [ ] Drone slider: smooth glide, no zipper noise. At Loud, the drone takes over without harshness or distortion.
 - [ ] Cycle keys at 10 s with the drone turned up: each key change glides, with no pop.
@@ -243,5 +252,7 @@ Features and fixes added after milestone 7, each built and tested the same way. 
 - [ ] Rhythm at Varied, 20 BPM: 4-beat notes leave 12 s gaps. Spacious, not empty?
 - [ ] Rhythm at Varied, 120 BPM: quick pairs 0.25 s apart, with the soft 0.4 s fade-in. Still distinct notes, not a smear?
 - [ ] Harmony at Often with Rhythm at Varied: the long harmony notes sustain under quick runs without getting muddy.
+- [ ] Drift on, default Harmony, for 3 minutes or more: harmony gently thickens then thins out, without a sudden change. The Harmony slider stays put.
+- [ ] Drift on with Harmony at Often: the busy stretches still sound calm. With Harmony at Never: no harmony at all.
 - [ ] Width, on headphones: Mono sounds as before. At the default, notes drift gently around the middle. At Wide, spacious but not ping-pong, and the drone stays in the middle.
 - [ ] Width at Wide with Harmony at Often: the two notes of a pair come from opposite sides and still sound like one chord.

@@ -19,7 +19,7 @@
   <script type="module">
     import { playNote, playWithHarmony, createBus, startDrone, DRONE_FADE, WIDTH_MAX } from '../src/audio.js';
     import { DEFAULT_SETTINGS } from '../src/settings.js';
-    import { nextNote, beatInterval, createRandom, dronePitch, createComposer, noteLength, NOTE_LENGTHS, TEMPO_MAX } from '../src/music.js';
+    import { nextNote, beatInterval, createRandom, dronePitch, createComposer, noteLength, NOTE_LENGTHS, TEMPO_MAX, DRIFT_PERIOD } from '../src/music.js';
     import { WAVEFORMS } from '../src/settings.js';
     import { LOOKAHEAD } from '../src/scheduler.js';
 
@@ -90,11 +90,11 @@
     }
 
     // Melody plus harmony notes from the composer until `until`, each note's length
-    // (in beats) setting the gap to the next, as in the app.
+    // (in beats) setting the gap to the next, as in the app. Start is at time 0 (for drift).
     function playMelody(ctx, destination, settings, seed, until) {
       const composer = createComposer(settings, createRandom(seed));
       for (let t = 0.05; t < until;) {
-        const note = composer.next();
+        const note = composer.next(t);
         playWithHarmony(ctx, destination, t, note, settings);
         t += note.beats * beatInterval(settings.tempo);
       }
@@ -172,6 +172,32 @@
       }
       report(worst <= 3, 'Varied rhythm stays close to steady in loudness',
         `vs steady — ${lines.join('; ')} (limit 3 dB)`);
+    }
+
+    // 2e. Drift: over one full rise and fall, harmony comes and goes but never adds more
+    // than the harmony limits allow. Each 30 s window is compared with the same seed and
+    // no harmony (harmony has its own random numbers, so the melody is the same).
+    async function checkDrift() {
+      const seconds = DRIFT_PERIOD + 10, windows = [];
+      for (let from = 5; from + 30 <= DRIFT_PERIOD + 5; from += 30) windows.push(from);
+      const lines = [];
+      let worst = 0;
+      for (const harmony of [DEFAULT_SETTINGS.harmony, 1]) {
+        const diffs = windows.map(() => 0);
+        for (const seed of [1, 2]) {
+          const withDrift = await render(seconds, ctx =>
+            playMelody(ctx, createBus(ctx).input, { ...DEFAULT_SETTINGS, harmony, drift: true }, seed, seconds));
+          const none = await render(seconds, ctx =>
+            playMelody(ctx, createBus(ctx).input, { ...DEFAULT_SETTINGS, harmony: 0 }, seed, seconds));
+          windows.forEach((from, i) => {
+            diffs[i] += (20 * Math.log10(rms(withDrift, from, from + 30) / rms(none, from, from + 30))) / 2;
+          });
+        }
+        worst = Math.max(worst, ...diffs);
+        lines.push(`harmony ${harmony}: ${diffs.map(d => (d >= 0 ? '+' : '') + d.toFixed(1)).join(' ')} dB`);
+      }
+      report(worst <= 1.5, 'Drift: harmony comes and goes without getting too loud',
+        `vs no harmony, each 30 s of a ${DRIFT_PERIOD} s cycle — ${lines.join('; ')} (limit +1.5 dB, as for harmony at full)`);
     }
 
     // 2d. Stereo: Mono puts a note in the middle; at full width a note at the edge leans
@@ -342,6 +368,7 @@
       await checkHarmonyLoudness();
       await checkRhythmLoudness();
       await checkStereo();
+      await checkDrift();
       await checkStop();
     } catch (err) {
       report(false, 'Checks crashed', String(err));

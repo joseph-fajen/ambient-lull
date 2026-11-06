@@ -98,6 +98,19 @@ export function nextNote(prevMidi, settings, rng) {
 export const HARMONY_INTERVALS = [3, 4, 5, 7];
 export const HARMONY_CHANCE_MAX = 0.5; // at harmony = 1, every other note on average
 
+// Slow drift: when on, the harmony amount rises and falls on its own, in a slow wave
+// from 1/4 to 1.75 times the slider (capped at 1), starting at the slider and rising
+// first. Proportional to the slider, so Never stays Never. `seconds` is the time since
+// Start; the slider itself never changes.
+export const DRIFT_PERIOD = 180; // seconds for one rise and fall
+export const DRIFT_DEPTH = 0.75;
+
+export function harmonyAmount(settings, seconds) {
+  const h = settings.harmony ?? 0;
+  if (!settings.drift) return h;
+  return Math.min(1, h * (1 + DRIFT_DEPTH * Math.sin((2 * Math.PI * seconds) / DRIFT_PERIOD)));
+}
+
 export function harmonyNote(midi, settings, rng) {
   const pool = notePool(settings.key, settings.scale);
   const above = pool.filter(m => HARMONY_INTERVALS.includes(m - midi));
@@ -136,6 +149,7 @@ function pickBeats(variety, rng) {
 // object for every new note, so changes apply from the next note on.
 // Harmony, note lengths and stereo places each draw from their own random sequence,
 // so those settings never change the melody line itself.
+// `next(seconds)` takes the note's time since Start, for drift (missing means 0).
 // Each note also gets a place left to right, `pan` from -1 to 1; its harmony note goes
 // on the opposite side. The performer scales these by the Width setting.
 export function createComposer(settings, rng) {
@@ -148,10 +162,10 @@ export function createComposer(settings, rng) {
   // the same melody as before stereo existed.
   const panRng = createRandom(lengthSeed ^ 0x9e3779b9);
   return {
-    next() {
+    next(seconds = 0) {
       const note = nextNote(prev, settings, rng);
       prev = note.midi;
-      const chance = (settings.harmony ?? 0) * HARMONY_CHANCE_MAX;
+      const chance = harmonyAmount(settings, seconds) * HARMONY_CHANCE_MAX;
       const harmony = harmonyRng() < chance ? harmonyNote(note.midi, settings, harmonyRng) : null;
       const beats = halfPending ? 0.5 : pickBeats(settings.variety ?? 0, lengthRng);
       halfPending = beats === 0.5 && !halfPending;
