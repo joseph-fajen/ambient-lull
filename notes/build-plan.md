@@ -2,7 +2,7 @@
 
 How to build the toy described in `baseline-prompt-v2.md`, in order, with a check at each step. The *why* behind the decisions is in `design-thinking.md`.
 
-**Status (2026-11-05):** milestones 0–7 are built and on `main`, plus the extras in "After v1" at the end. Still to do: the listening sweep in milestone 7, and ticking the boxes.
+**Status (2026-11-06):** milestones 0–7 are built and on `main`, plus the extras in "After v1" at the end. Every check that the unit tests, audio checks or code can confirm is ticked. Still to do: the listening checks (the sweep and defaults in milestone 7, and the list at the end).
 
 **How to use this:** build one milestone at a time. After each one, stop. Run the tests, do the listening check, and tick the box before moving on. The risky parts (timing, start/stop) come early, so they're proven before the easy parts pile on top.
 
@@ -87,37 +87,37 @@ tests/
 ### 0. Skeleton
 **Build:** the folders, `package.json`, an empty page, and a README with run instructions.
 **Check:**
-- [ ] `npm test` runs, even with no tests yet.
-- [ ] `python3 -m http.server` serves the page, with no console errors.
+- [x] `npm test` runs, even with no tests yet.
+- [x] `python3 -m http.server` serves the page, with no console errors.
 
 ### 1. Music core (pure, tests first)
 **Build:** `music.js` and `settings.js`.
 **Automated tests:**
-- [ ] Every scale has the right intervals. Adding a scale is one line of data.
-- [ ] All 12 keys stay centered near middle C (B isn't almost an octave higher than C).
-- [ ] The rules sweep: every key × every scale × many seeds, checking range, in-scale, step size and duration.
-- [ ] The same seed always gives the same notes.
-- [ ] Tempo to note length: about 8 s at 20 BPM, about 2–3 s at 120 BPM, smooth in between. Values out of range get clamped.
-- [ ] Settings: missing fields get defaults, unknown values (like a removed scale) fall back to defaults, and garbage input doesn't crash.
+- [x] Every scale has the right intervals. Adding a scale is one line of data.
+- [x] All 12 keys stay centered near middle C (B isn't almost an octave higher than C).
+- [x] The rules sweep: every key × every scale × many seeds, checking range, in-scale, step size and duration.
+- [x] The same seed always gives the same notes.
+- [x] Tempo to note length: about 8 s at 20 BPM, about 2–3 s at 120 BPM, smooth in between. Values out of range get clamped.
+- [x] Settings: missing fields get defaults, unknown values (like a removed scale) fall back to defaults, and garbage input doesn't crash.
 
 ### 2. One note, end to end
 **Build:** `audio.js`, with one voice, the envelope, the filter, reverb and master volume, plus a temporary "play one note" button. Also `tests/audio-checks.html`.
 **Audio checks:**
-- [ ] No click at the start or end of a note.
-- [ ] The peak stays below 1.0.
+- [x] No click at the start or end of a note.
+- [x] The peak stays below 1.0.
 
 **Listen for:** a smooth fade-in, a long fade-out, a spacious reverb tail, and no click.
 
 ### 3. Endless melody, Start and Stop (the risky part)
 **Build:** `scheduler.js` (the lookahead window logic and the start/stop states) and the timer loop in `main.js`.
 **Automated tests (fake clock):**
-- [ ] Notes come exactly 60/BPM seconds apart, with no gaps or duplicates across windows.
-- [ ] A tempo change affects the next note, not ones already scheduled.
-- [ ] If the clock jumps ahead (for example, the browser tab slept), it skips forward instead of playing a burst of missed notes.
-- [ ] State changes: stopped → playing → stopping → stopped. Start while playing does nothing. Start while stopping is handled cleanly, not as two engines at once.
+- [x] Notes come exactly 60/BPM seconds apart, with no gaps or duplicates across windows.
+- [x] A tempo change affects the next note, not ones already scheduled.
+- [x] If the clock jumps ahead (for example, the browser tab slept), it skips forward instead of playing a burst of missed notes.
+- [x] State changes: stopped → playing → stopping → stopped. Start while playing does nothing. Start while stopping is handled cleanly, not as two engines at once.
 
 **Audio check:**
-- [ ] After Stop, the output is silent once the fade finishes.
+- [x] After Stop, the output is silent once the fade finishes.
 
 **Listen for:**
 - steady timing for several minutes
@@ -128,41 +128,41 @@ tests/
 ### 4. Melody controls
 **Build:** the key, scale and tempo controls, wired to the settings object.
 **Automated tests:**
-- [ ] Changing a setting mid-run changes the next note the composer picks.
+- [x] Changing a setting mid-run changes the next note the composer picks.
 
 **Listen for:** each change is heard within a note or two. A key change mid-play sounds like a modulation, not a mess.
 
 ### 4b. Root drone (added mid-build)
 **Build:** a sustained drone on the key's root, below the melody, with an on/off toggle (default on). Soft bass/tamboura-like sound: a sine body plus two slightly detuned, low-passed sawtooths whose filter drifts slowly. It ignores the waveform and tone settings. Key changes crossfade the drone on the next melody note; Stop fades it with everything else.
 **Automated tests:**
-- [ ] The drone pitch sits below the melody range in every key, in the same register for all keys.
-- [ ] Settings: `drone` is a true/false value; anything else falls back to the default (on).
+- [x] The drone pitch sits below the melody range in every key, in the same register for all keys.
+- [x] Settings: `drone` is a true/false value; anything else falls back to the default (on).
 
 **Audio checks:**
-- [ ] No click when the drone starts; silent after it's released.
-- [ ] The peak stays below 1.0 with the drone playing under the worst-case melody.
-- [ ] The drone is quieter than the melody (at its default volume).
+- [x] No click when the drone starts; silent after it's released.
+- [x] The peak stays below 1.0 with the drone playing under the worst-case melody.
+- [x] The drone is quieter than the melody (at its default volume).
 
 **Listen for:** a soft bass bed under the melody (at its default volume). Key changes glide between roots with no click. Toggling the drone fades it in or out on the next note.
 
 ### 5. Sound controls
 **Build:** the waveform picker (mood name plus technical name), volume matching for each waveform, and the tone slider with its limited range.
 **Audio checks:**
-- [ ] The 4 waveforms are within about 2 dB of each other.
-- [ ] No distortion with sawtooth at the brightest tone at 120 BPM.
+- [x] The 4 waveforms are within about 2 dB of each other.
+- [x] No distortion with sawtooth at the brightest tone at 120 BPM.
 
 **Listen for:** no loudness jump when switching waveforms. Sawtooth at the brightest tone is still pleasant, not harsh.
 
 ### 6. Presets
 **Build:** `presets.js` and the 4 named slots, with save, load and the overwrite confirmation.
 **Automated tests (fake storage):**
-- [ ] Saving then loading gives back the same settings.
-- [ ] Values are stored by name, not list position.
-- [ ] A missing field gets its default.
-- [ ] Damaged data or an unknown scale falls back to defaults.
-- [ ] Storage that throws errors doesn't break the app; presets just aren't saved.
-- [ ] An empty name gets a default ("Preset 2"). Long names are trimmed.
-- [ ] Overwrite needs confirmation only when the slot is already filled.
+- [x] Saving then loading gives back the same settings.
+- [x] Values are stored by name, not list position.
+- [x] A missing field gets its default.
+- [x] Damaged data or an unknown scale falls back to defaults.
+- [x] Storage that throws errors doesn't break the app; presets just aren't saved.
+- [x] An empty name gets a default ("Preset 2"). Long names are trimmed.
+- [x] Overwrite needs confirmation only when the slot is already filled.
 
 **Listen and click for:**
 - loading while playing shifts the music on the next note
@@ -170,11 +170,11 @@ tests/
 - the confirm dialog appears only when overwriting
 
 ### 7. Final pass
-- [ ] All automated tests and audio checks pass.
+- [x] All automated tests and audio checks pass.
 - [ ] **The "can't sound bad" sweep:** for each waveform, try the slowest and fastest tempo, the darkest and brightest tone, and every scale, including a key change mid-play. Nothing sounds harsh, muddy, clipped or broken.
 - [ ] Defaults: a fresh page plus one press of Start sounds good, with no tweaking.
-- [ ] Remove the temporary "play one note" button.
-- [ ] Update the README.
+- [x] Remove the temporary "play one note" button.
+- [x] Update the README.
 
 ---
 
