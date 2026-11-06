@@ -19,6 +19,7 @@ All changes apply live, from the next note (drone volume applies immediately).
 | Control | What it does |
 | --- | --- |
 | Key | Any of the 12 roots. The pitch range stays centred near middle C in every key. |
+| Cycle keys | When on, moves the key up a fifth every 30 s while playing (C → G → D … → F → C). Picking a key by hand restarts the countdown. Off by default. |
 | Scale | Major pentatonic (default), minor pentatonic, major, natural minor, Dorian, Lydian, Japanese In. |
 | Tempo | 20–120 BPM, one note per beat. Notes ring for about 8 s at 20 BPM, down to 2.5 s at 120 BPM. |
 | Sound | Soft (sine), Warm (triangle, default), Hollow (square), Bright (sawtooth), volume-matched. |
@@ -48,9 +49,9 @@ These cover the pure logic: scales and keys, the melody walk (a sweep of every k
 
 ```
 src/
-  music.js       composer (pure): keys, scales, the melody walk, drone pitch, tempo → note length
+  music.js       composer (pure): keys, scales, circle of fifths, the melody walk, drone pitch, tempo → note length
   settings.js    the settings object (pure): defaults, waveform table, validation
-  scheduler.js   timing (pure): which notes are due in the lookahead window; Start/Stop states
+  scheduler.js   timing (pure): which notes are due in the lookahead window; Start/Stop states; key-cycle countdown
   audio.js       performer: the note voice, the drone, reverb, and each run's output chain
   presets.js     the 4 preset slots; storage is passed in
   main.js        the page: controls, the timer loop, connecting everything

@@ -17,7 +17,7 @@ test('waveforms table: four built-in types, each with a mood name', () => {
 });
 
 test('a complete valid object comes back unchanged', () => {
-  const s = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3 };
+  const s = { key: 'F#', scale: 'dorian', waveform: 'sawtooth', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true };
   assert.deepEqual(normalizeSettings(s), s);
 });
 
@@ -27,7 +27,7 @@ test('missing fields get defaults', () => {
 });
 
 test('unknown values fall back to defaults', () => {
-  const s = normalizeSettings({ key: 'H', scale: 'bebop', waveform: 'noise', tone: 'bright', tempo: 'fast', drone: 'yes', droneVolume: 'loud' });
+  const s = normalizeSettings({ key: 'H', scale: 'bebop', waveform: 'noise', tone: 'bright', tempo: 'fast', drone: 'yes', droneVolume: 'loud', autoKey: 'sometimes' });
   assert.deepEqual(s, DEFAULT_SETTINGS);
 });
 
@@ -66,4 +66,10 @@ test('drone volume runs 0 to 1, clamped, with a default in between', () => {
   assert.equal(normalizeSettings({ droneVolume: 2 }).droneVolume, 1);
   assert.equal(normalizeSettings({ droneVolume: -1 }).droneVolume, 0);
   assert.equal(normalizeSettings({ droneVolume: NaN }).droneVolume, DEFAULT_SETTINGS.droneVolume);
+});
+
+test('key cycling is a true/false setting, off by default', () => {
+  assert.equal(DEFAULT_SETTINGS.autoKey, false);
+  assert.equal(normalizeSettings({ autoKey: true }).autoKey, true);
+  for (const junk of [1, 'true', null]) assert.equal(normalizeSettings({ autoKey: junk }).autoKey, false);
 });

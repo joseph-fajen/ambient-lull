@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   KEYS, SCALES, CENTER_MIDI, TEMPO_MIN, TEMPO_MAX, NOTE_LENGTH_MIN, NOTE_LENGTH_MAX,
-  rootMidi, notePool, nextNote, noteLength, createRandom, createComposer, dronePitch,
+  rootMidi, notePool, nextNote, noteLength, createRandom, createComposer, dronePitch, nextKeyInCircle,
 } from '../src/music.js';
 
 const settingsFor = (key, scale, tempo = 40) => ({ key, scale, tempo });
@@ -177,4 +177,16 @@ test('drone: below the melody range in every key, in the same register', () => {
   }
   assert.ok(Math.max(...pitches) - Math.min(...pitches) < 12, 'all keys within one octave');
   assert.ok(Math.min(...pitches) >= 28, 'not so low it vanishes (about 41 Hz or higher)');
+});
+
+test('circle of fifths: each step goes up a fifth, visiting all 12 keys', () => {
+  assert.equal(nextKeyInCircle('C'), 'G');
+  assert.equal(nextKeyInCircle('B'), 'F#');
+  assert.equal(nextKeyInCircle('F#'), 'Db');
+  assert.equal(nextKeyInCircle('F'), 'C');
+  const seen = [];
+  let key = 'C';
+  for (let i = 0; i < 12; i++) { seen.push(key); key = nextKeyInCircle(key); }
+  assert.equal(key, 'C', 'back to the start after 12 steps');
+  assert.deepEqual(seen, ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', 'F']);
 });

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTransport, LOOKAHEAD, START_DELAY } from '../src/scheduler.js';
+import { createTransport, createKeyCycle, LOOKAHEAD, START_DELAY, KEY_CYCLE_SECONDS } from '../src/scheduler.js';
 import { createRandom } from '../src/music.js';
 
 const close = (a, b) => Math.abs(a - b) < 1e-9;
@@ -112,4 +112,41 @@ test('start while stopping begins a new run; the old fade finishing does not sto
 
   const times = t.due(1, () => 1);
   assert.ok(close(times[0], 1 + START_DELAY), 'the new run starts fresh');
+});
+
+// Fake clock: which ticks (every 50 ms) say a key change is due.
+function keyChanges(cycle, from, to) {
+  const at = [];
+  for (let i = Math.round(from * 20); i <= Math.round(to * 20); i++) {
+    const now = i / 20;
+    if (cycle.due(now)) at.push(now);
+  }
+  return at;
+}
+
+test('key cycle: due every 30 seconds after reset', () => {
+  assert.equal(KEY_CYCLE_SECONDS, 30);
+  const cycle = createKeyCycle();
+  cycle.reset(10);
+  assert.deepEqual(keyChanges(cycle, 10, 135), [40, 70, 100, 130]);
+});
+
+test('key cycle: never due before the first reset', () => {
+  assert.deepEqual(keyChanges(createKeyCycle(), 0, 100), []);
+});
+
+test('key cycle: a reset (manual key change) restarts the countdown', () => {
+  const cycle = createKeyCycle();
+  cycle.reset(0);
+  assert.deepEqual(keyChanges(cycle, 0, 25), []);
+  cycle.reset(25);
+  assert.deepEqual(keyChanges(cycle, 25.05, 90), [55, 85]);
+});
+
+test('key cycle: a clock jump gives one change, not a burst', () => {
+  const cycle = createKeyCycle();
+  cycle.reset(0);
+  assert.equal(cycle.due(500), true);
+  assert.equal(cycle.due(500.05), false);
+  assert.deepEqual(keyChanges(cycle, 500.1, 531), [530]);
 });

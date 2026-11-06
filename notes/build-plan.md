@@ -145,6 +145,8 @@ tests/
 
 **Added after milestone 7:** a drone volume slider (`droneVolume`, 0–1, default 0.6, saved in presets). It applies immediately with a short glide, since it's a mix level rather than a note property. Audio check: at full volume the drone is no louder than the melody.
 
+**Added after milestone 7:** a "Cycle keys" toggle (`autoKey`, default off, saved in presets). While playing, it moves the key up a fifth every 30 s on the audio clock; the change lands on the next note like a manual key change. A manual key change, switching it on, or loading a preset restarts the countdown. Tests: the circle visits all 12 keys and returns home; the countdown fires every 30 s, restarts on reset, and gives one change (not a burst) after a clock jump.
+
 ### 5. Sound controls
 **Build:** the waveform picker (mood name plus technical name), volume matching for each waveform, and the tone slider with its limited range.
 **Audio checks:**

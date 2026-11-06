@@ -1,9 +1,9 @@
 // Shell: wires the UI to the composer (music.js), the timing (scheduler.js) and the
 // performer (audio.js).
 import { DEFAULT_SETTINGS, WAVEFORMS, TONE_MIN, TONE_MAX } from './settings.js';
-import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX, beatInterval, createComposer, dronePitch } from './music.js';
+import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX, beatInterval, createComposer, dronePitch, nextKeyInCircle } from './music.js';
 import { playNote, createBus, startDrone } from './audio.js';
-import { createTransport } from './scheduler.js';
+import { createTransport, createKeyCycle } from './scheduler.js';
 import { createPresetStore, NAME_MAX } from './presets.js';
 
 const TICK_MS = 50; // how often the timer loop books notes
@@ -12,6 +12,7 @@ const TICK_MS = 50; // how often the timer loop books notes
 const settings = { ...DEFAULT_SETTINGS };
 
 const transport = createTransport();
+const keyCycle = createKeyCycle();
 let ctx = null;
 let bus = null; // the current run's output; a stopped run's bus fades out on its own
 let timer = null;
@@ -23,6 +24,10 @@ const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
 
 function tick() {
+  if (settings.autoKey && keyCycle.due(ctx.currentTime)) {
+    settings.key = nextKeyInCircle(settings.key);
+    keySelect.value = settings.key; // applies from the next note, like a manual change
+  }
   for (const time of transport.due(ctx.currentTime, () => beatInterval(settings.tempo))) {
     updateDrone(time);
     playNote(ctx, bus.input, time, composer.next(), settings);
@@ -47,6 +52,7 @@ async function start() {
   composer = createComposer(settings, Math.random);
   drone = null;
   droneMidi = null;
+  keyCycle.reset(ctx.currentTime);
   clearInterval(timer);
   timer = setInterval(tick, TICK_MS);
   tick();
@@ -83,6 +89,7 @@ const scaleSelect = document.getElementById('scale');
 const tempoSlider = document.getElementById('tempo');
 const tempoValue = document.getElementById('tempo-value');
 const droneToggle = document.getElementById('drone');
+const autoKeyToggle = document.getElementById('auto-key');
 const droneVolumeSlider = document.getElementById('drone-volume');
 const waveformGroup = document.getElementById('waveform');
 const toneSlider = document.getElementById('tone');
@@ -111,12 +118,24 @@ function showSettings() {
   tempoSlider.value = settings.tempo;
   tempoValue.textContent = `${settings.tempo} BPM`;
   droneToggle.checked = settings.drone;
+  autoKeyToggle.checked = settings.autoKey;
   droneVolumeSlider.value = settings.droneVolume;
   waveformGroup.querySelector(`input[value="${settings.waveform}"]`).checked = true;
   toneSlider.value = settings.tone;
 }
 
-keySelect.addEventListener('change', () => { settings.key = keySelect.value; });
+// Restart the 30-second key countdown (on a manual key change, switching cycling on,
+// or loading a preset). Before the first Start there's no clock yet; Start resets it.
+const restartKeyCycle = () => { if (ctx) keyCycle.reset(ctx.currentTime); };
+
+keySelect.addEventListener('change', () => {
+  settings.key = keySelect.value;
+  restartKeyCycle();
+});
+autoKeyToggle.addEventListener('change', () => {
+  settings.autoKey = autoKeyToggle.checked;
+  restartKeyCycle();
+});
 scaleSelect.addEventListener('change', () => { settings.scale = scaleSelect.value; });
 tempoSlider.addEventListener('input', () => {
   settings.tempo = Number(tempoSlider.value);
@@ -164,6 +183,7 @@ function showPresets() {
       Object.assign(settings, presets.load(i));
       showSettings();
       drone?.setVolume(settings.droneVolume, ctx.currentTime);
+      restartKeyCycle();
     });
     row.append(name, save, load);
     return row;

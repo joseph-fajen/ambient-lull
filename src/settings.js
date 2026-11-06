@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   tempo: 40,
   drone: true,
   droneVolume: 0.6, // 0 (silent) to 1 (about as loud as the melody)
+  autoKey: false, // cycle the key round the circle of fifths
 });
 
 const oneOf = (table, value, fallback) => (table.some(e => e.id === value) ? value : fallback);
@@ -41,5 +42,6 @@ export function normalizeSettings(input) {
     tempo: number(s.tempo, TEMPO_MIN, TEMPO_MAX, d.tempo),
     drone: typeof s.drone === 'boolean' ? s.drone : d.drone,
     droneVolume: number(s.droneVolume, 0, 1, d.droneVolume),
+    autoKey: typeof s.autoKey === 'boolean' ? s.autoKey : d.autoKey,
   };
 }

@@ -46,6 +46,12 @@ export function rootMidi(keyId) {
   return s <= 6 ? CENTER_MIDI + s : CENTER_MIDI + s - 12;
 }
 
+// The next key round the circle of fifths: up a fifth (7 semitones), C G D A ... F C.
+export function nextKeyInCircle(keyId) {
+  const semitone = (findKey(keyId).semitone + 7) % 12;
+  return KEYS.find(k => k.semitone === semitone).id;
+}
+
 // The drone sits two octaves below the root: under the whole melody range.
 export const dronePitch = keyId => rootMidi(keyId) - 24;
 
