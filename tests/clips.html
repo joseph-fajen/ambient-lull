@@ -1,0 +1,62 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Ambient Lull: sound clips</title>
+<!-- Renders a short clip of each sound, for listening and blind tests. Used by
+     render-clips.mjs (npm run clips); it reads window.clipWav(id) for each sound. -->
+<body>
+  <p id="status">Rendering…</p>
+  <script type="module">
+    import { createBus, startDrone, playWithHarmony } from '../src/audio.js';
+    import { DEFAULT_SETTINGS, SOUNDS } from '../src/settings.js';
+    import { createComposer, createRandom, beatInterval, dronePitch } from '../src/music.js';
+
+    const params = new URLSearchParams(location.search);
+    const SECONDS = Number(params.get('seconds')) || 30;
+    const SEED = Number(params.get('seed')) || 7;
+    const FADE = 3; // seconds of fade-out at the end, like a slow Stop
+    const RATE = 44100;
+
+    // One clip: the app's defaults with this sound, the same seed for every sound, so
+    // only the sound differs. The drone plays at its default volume.
+    async function render(sound) {
+      const settings = { ...DEFAULT_SETTINGS, sound };
+      const ctx = new OfflineAudioContext(2, SECONDS * RATE, RATE);
+      const bus = createBus(ctx);
+      const level = bus.master.gain.value;
+      bus.master.gain.setValueAtTime(level, SECONDS - FADE);
+      bus.master.gain.linearRampToValueAtTime(0, SECONDS);
+      if (settings.drone) startDrone(ctx, bus.dryInput, 0.05, dronePitch(settings.key), settings.droneVolume);
+      const composer = createComposer(settings, createRandom(SEED));
+      for (let t = 0.05; t < SECONDS - FADE;) {
+        const note = composer.next(t);
+        playWithHarmony(ctx, bus.input, t, note, settings);
+        t += note.beats * beatInterval(settings.tempo);
+      }
+      return ctx.startRendering();
+    }
+
+    // 16-bit stereo WAV, as base64 (to pass back to the runner as text).
+    function wavBase64(buffer) {
+      const n = buffer.length, out = new DataView(new ArrayBuffer(44 + n * 4));
+      const text = (at, s) => [...s].forEach((c, i) => out.setUint8(at + i, c.charCodeAt(0)));
+      text(0, 'RIFF'); out.setUint32(4, 36 + n * 4, true); text(8, 'WAVEfmt ');
+      out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, 2, true);
+      out.setUint32(24, RATE, true); out.setUint32(28, RATE * 4, true); out.setUint16(32, 4, true);
+      out.setUint16(34, 16, true); text(36, 'data'); out.setUint32(40, n * 4, true);
+      const [l, r] = [buffer.getChannelData(0), buffer.getChannelData(1)];
+      for (let i = 0; i < n; i++) {
+        out.setInt16(44 + i * 4, Math.max(-1, Math.min(1, l[i])) * 32767, true);
+        out.setInt16(46 + i * 4, Math.max(-1, Math.min(1, r[i])) * 32767, true);
+      }
+      const bytes = new Uint8Array(out.buffer);
+      let s = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return btoa(s);
+    }
+
+    window.sounds = SOUNDS;
+    window.clipWav = async id => wavBase64(await render(id));
+    document.body.dataset.ready = 'yes';
+    document.getElementById('status').textContent = 'Ready.';
+  </script>
+</body>

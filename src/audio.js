@@ -78,11 +78,157 @@ const waveformSound = (type, gain) => (ctx, out, time, { midi, duration, peak },
   return osc;
 };
 
+// Struck and plucked sounds: a quick but soft start, then a natural fade (an
+// exponential decay with time constant `decay` seconds), inside the usual envelope so
+// the note is still silent by its end. The start rises along x² over STRUCK_ATTACK, so
+// it has no click but still sounds struck rather than swelled.
+export const STRUCK_ATTACK = 0.04;
+const RISE_SHAPE = Float32Array.from({ length: 64 }, (_, i) => (i / 63) ** 2);
+
+function struckEnvelope(ctx, time, duration, peak, decay) {
+  const amp = ctx.createGain();
+  const rise = Math.min(STRUCK_ATTACK, duration / 4);
+  amp.gain.setValueCurveAtTime(RISE_SHAPE.map(x => x * peak), time, rise);
+  amp.gain.setValueCurveAtTime(RELEASE_SHAPE.map(x => x * peak), time + rise, duration - rise);
+  const fade = ctx.createGain();
+  fade.gain.setValueAtTime(1, time + rise);
+  fade.gain.setTargetAtTime(0, time + rise, decay);
+  amp.connect(fade);
+  return { input: amp, output: fade };
+}
+
+// A sine whose frequency is wobbled by another sine (FM synthesis). The wobble's depth,
+// the "index", sets how many overtones there are; here it starts at `from` and falls
+// towards `to` with time constant `tau`, so the note starts bright and mellows.
+function fmPair(ctx, time, duration, frequency, ratio, from, to, tau) {
+  const carrier = ctx.createOscillator();
+  carrier.frequency.value = frequency;
+  const mod = ctx.createOscillator();
+  mod.frequency.value = frequency * ratio;
+  const depth = ctx.createGain(); // index × modulator frequency = deviation in Hz
+  depth.gain.setValueAtTime(from * frequency * ratio, time);
+  depth.gain.setTargetAtTime(to * frequency * ratio, time, tau);
+  mod.connect(depth).connect(carrier.frequency);
+  for (const osc of [carrier, mod]) { osc.start(time); osc.stop(time + duration); }
+  return carrier;
+}
+
+// Glass: a bell. The 3.5 ratio gives bell-like overtones that don't line up with the
+// note's harmonics; Tone sets how bright the strike is.
+function glassSound(ctx, out, time, { midi, duration, peak }, { tone }) {
+  const f = midiToFrequency(midi);
+  const env = struckEnvelope(ctx, time, duration, peak * 1.33, 1.6);
+  const carrier = fmPair(ctx, time, duration, f, 3.5, 0.6 + 1.4 * tone, 0.15, 0.8);
+  carrier.connect(toneFilter(ctx, tone)).connect(env.input);
+  env.output.connect(out);
+  return carrier;
+}
+
+// Kalimba: a short, woody thumb piano. A 1:1 FM "knock" that dies fast, plus the
+// metal tine's quiet high overtone (about 5.4× the note, not a harmonic).
+function kalimbaSound(ctx, out, time, { midi, duration, peak }, { tone }) {
+  const f = midiToFrequency(midi);
+  const env = struckEnvelope(ctx, time, duration, peak * 1.9, 0.55);
+  const filter = toneFilter(ctx, tone);
+  filter.connect(env.input);
+  const body = fmPair(ctx, time, duration, f, 1, 1.5, 0, 0.05);
+  body.connect(filter);
+  const ping = ctx.createOscillator();
+  ping.frequency.value = f * 5.4;
+  const pingLevel = ctx.createGain();
+  pingLevel.gain.setValueAtTime(0.25, time);
+  pingLevel.gain.setTargetAtTime(0, time, 0.06);
+  ping.connect(pingLevel).connect(filter);
+  ping.start(time);
+  ping.stop(time + duration);
+  env.output.connect(out);
+  return body;
+}
+
+// Harp: a plucked string by Karplus-Strong. A short burst of noise circulates in a
+// delay one period long; blending neighbours each time round softens and fades it,
+// like a real string. Browsers can't run a feedback delay that short (it needs under
+// 128 samples above about 344 Hz), so the pluck is computed here, once per pitch.
+const HARP_SECONDS = 8; // longer than any note
+const HARP_DAMPING = 0.15; // 0.5 is the classic average (dullest, fastest fade); lower rings longer
+const HARP_PLUCK_SOFTNESS = 0.2; // smoothing of the pluck's noise: lower is softer
+const harpCache = new Map();
+function harpBuffer(ctx, midi) {
+  const key = `${midi}@${ctx.sampleRate}`;
+  if (harpCache.has(key)) return harpCache.get(key);
+  const rate = ctx.sampleRate;
+  const period = rate / midiToFrequency(midi) - HARP_DAMPING; // the damping adds this much delay
+  const n = Math.ceil(HARP_SECONDS * rate);
+  const y = new Float32Array(n);
+  const rng = createRandom(midi);
+  const burst = Math.ceil(period);
+  // The pluck: noise, smoothed twice round the loop so it starts soft (a fingertip, not a
+  // pick), with its average removed so it carries no offset.
+  for (let i = 0; i < burst; i++) y[i] = rng() * 2 - 1;
+  for (let pass = 0; pass < 2; pass++) {
+    let smooth = 0;
+    for (let lap = 0; lap < 2; lap++) { // the first lap only warms up the filter
+      for (let i = 0; i < burst; i++) { smooth += HARP_PLUCK_SOFTNESS * (y[i] - smooth); if (lap) y[i] = smooth; }
+    }
+  }
+  const mean = y.subarray(0, burst).reduce((a, v) => a + v, 0) / burst;
+  for (let i = 0; i < burst; i++) y[i] -= mean;
+  const loss = 0.999; // per pass: higher notes pass more often, so they fade sooner, as on a harp
+  for (let i = burst + 1; i < n; i++) { // from here, two periods back is inside the buffer
+    const d = i - period, j = Math.floor(d), frac = d - j;
+    const a = y[j] + frac * (y[j + 1] - y[j]); // the sample one period back
+    const b = y[j - 1] + frac * (y[j] - y[j - 1]);
+    y[i] += loss * ((1 - HARP_DAMPING) * a + HARP_DAMPING * b);
+  }
+  let max = 0;
+  for (const v of y) max = Math.max(max, Math.abs(v));
+  for (let i = 0; i < n; i++) y[i] /= max;
+  const buffer = new AudioBuffer({ length: n, sampleRate: rate, numberOfChannels: 1 });
+  buffer.copyToChannel(y, 0);
+  harpCache.set(key, buffer);
+  return buffer;
+}
+
+function harpSound(ctx, out, time, { midi, duration, peak }, { tone }) {
+  const env = struckEnvelope(ctx, time, duration, peak * 2.8, 30); // the string fades on its own
+  const src = new AudioBufferSourceNode(ctx, { buffer: harpBuffer(ctx, midi) });
+  src.connect(toneFilter(ctx, tone)).connect(env.input);
+  env.output.connect(out);
+  src.start(time);
+  src.stop(time + duration);
+  return src;
+}
+
+// Tine: an electric piano. A 1:1 FM body with a soft bark at the start, and a quiet
+// bell-like tine two octaves up that fades quickly.
+function tineSound(ctx, out, time, { midi, duration, peak }, { tone }) {
+  const f = midiToFrequency(midi);
+  const env = struckEnvelope(ctx, time, duration, peak * 1.32, 1.4);
+  const filter = toneFilter(ctx, tone);
+  filter.connect(env.input);
+  const body = fmPair(ctx, time, duration, f, 1, 0.4 + 1.0 * tone, 0.2, 0.35);
+  body.connect(filter);
+  const tine = ctx.createOscillator();
+  tine.frequency.value = f * 4;
+  const tineLevel = ctx.createGain();
+  tineLevel.gain.setValueAtTime(0.18, time);
+  tineLevel.gain.setTargetAtTime(0, time, 0.12);
+  tine.connect(tineLevel).connect(filter);
+  tine.start(time);
+  tine.stop(time + duration);
+  env.output.connect(out);
+  return body;
+}
+
 export const SOUND_RECIPES = {
   sine: waveformSound('sine', 0.82), // -1.7 dB
   triangle: waveformSound('triangle', 1),
   square: waveformSound('square', 0.71), // -3.0 dB
   sawtooth: waveformSound('sawtooth', 1.24), // +1.9 dB
+  glass: glassSound,
+  kalimba: kalimbaSound,
+  harp: harpSound,
+  tine: tineSound,
 };
 
 // One note. `level` (default 1) scales its volume; `pan` (default 0) is its place.

@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "test:audio": "node tests/run-audio-checks.mjs"
+    "test:audio": "node tests/run-audio-checks.mjs",
+    "clips": "node tests/render-clips.mjs"
   }
 }

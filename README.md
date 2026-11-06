@@ -47,7 +47,7 @@ These cover the pure logic: scales and keys, the melody walk (a sweep of every k
 npm run test:audio
 ```
 
-This runs `tests/audio-checks.html` in a headless browser and prints the results (about 5 minutes). It exits with an error if any check fails. Set `CHROME=/path/to/browser` to choose the browser. You can also open the page yourself, with the server running, at <http://localhost:8000/tests/audio-checks.html>.
+This runs `tests/audio-checks.html` in a headless browser and prints the results (about 5–10 minutes). It exits with an error if any check fails. Set `CHROME=/path/to/browser` to choose the browser. You can also open the page yourself, with the server running, at <http://localhost:8000/tests/audio-checks.html>.
 
 The page renders sound offline (to numbers, not the speakers) and checks:
 

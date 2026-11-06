@@ -11,6 +11,10 @@ export const SOUNDS = [
   { id: 'triangle', name: 'Warm', detail: 'triangle', group: 'classic' },
   { id: 'square', name: 'Hollow', detail: 'square', group: 'classic' },
   { id: 'sawtooth', name: 'Bright', detail: 'sawtooth', group: 'classic' },
+  { id: 'glass', name: 'Glass', detail: 'bell', group: 'struck' },
+  { id: 'kalimba', name: 'Kalimba', detail: 'thumb piano', group: 'struck' },
+  { id: 'harp', name: 'Harp', detail: 'plucked string', group: 'struck' },
+  { id: 'tine', name: 'Tine', detail: 'electric piano', group: 'struck' },
 ];
 
 // Tone runs from 0 (darkest) to 1 (brightest); the performer maps it to a filter.

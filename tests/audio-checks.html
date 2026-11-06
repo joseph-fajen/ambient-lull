@@ -114,7 +114,8 @@
         }
       }
       let worst = { level: 0 };
-      for (const { w, key, seed, tempo, variety } of runs) {
+      // Several renders at once: the browser runs each offline render on its own thread.
+      const runOne = async ({ w, key, seed, tempo, variety }) => {
         const settings = { key, scale: 'major-pentatonic', sound: w.id, tone: 1, tempo, harmony: 1, variety, width: 1 };
         const playFor = 20;
         const buf = await render(playFor + 12, ctx => {
@@ -124,7 +125,9 @@
         });
         const level = peak(buf);
         if (level > worst.level) worst = { level, label: `${w.name} (${w.detail}), ${tempo} BPM, key ${key}, rhythm ${variety}, seed ${seed}` };
-      }
+      };
+      const batch = Math.max(1, navigator.hardwareConcurrency || 1);
+      for (let i = 0; i < runs.length; i += batch) await Promise.all(runs.slice(i, i + batch).map(runOne));
       report(worst.level < 0.9, 'Peak stays well below 1.0',
         `loudest of ${runs.length} runs: ${worst.level.toFixed(3)} (${dB(worst.level)}) — ${worst.label}, brightest tone, ` +
         `drone and harmony at full, full width (limit 0.9, leaving room for unluckier runs)`);
