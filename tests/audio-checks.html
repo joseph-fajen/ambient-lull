@@ -182,8 +182,9 @@
         `drone is ${gaps.map(g => g.toFixed(1)).join(' / ')} dB quieter than the melody in F♯ / C / F ` +
         `(needs 3 dB or more, with under 3 dB between keys)`);
       const loudest = await gapsAt(1);
-      report(Math.min(...loudest) >= 0, 'Drone at full volume is no louder than the melody',
-        `drone is ${loudest.map(g => g.toFixed(1)).join(' / ')} dB quieter than the melody in F♯ / C / F (needs 0 dB or more)`);
+      const louder = loudest.map(g => -g);
+      report(Math.min(...louder) >= 8 && Math.max(...louder) <= 12, 'Drone at full volume is about 10 dB louder than the melody',
+        `drone is ${louder.map(g => g.toFixed(1)).join(' / ')} dB louder than the melody in F♯ / C / F (needs 8–12 dB)`);
     }
 
     // 5. Volume matching: every waveform has about the same average loudness, at the

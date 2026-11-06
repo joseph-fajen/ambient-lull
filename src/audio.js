@@ -14,6 +14,8 @@ export const TONE_CUTOFF_MIN = 600; // Hz, tone = 0
 export const TONE_CUTOFF_MAX = 3200; // Hz, tone = 1 (kept low so sawtooth never gets harsh)
 export const REVERB_SECONDS = 4;
 export const DRY_LEVEL = 0.7;
+// Overall output level. Leaves headroom for the drone at full volume over the busiest melody.
+export const MASTER_LEVEL = 0.65;
 export const WET_LEVEL = 0.5;
 export const STOP_FADE = 1.5; // seconds for Stop to fade to silence
 
@@ -63,12 +65,12 @@ export function playNote(ctx, destination, time, { midi, duration }, { waveform,
 // Drone: a soft, sustained bass on the root, tamboura-like. A sine gives the body;
 // two slightly detuned sawtooths add a gentle beating buzz, through a low-pass whose
 // cutoff drifts slowly so the overtones shimmer. Fixed sound: ignores waveform and tone.
-export const DRONE_LEVEL_MAX = 0.31; // at full volume: about as loud as the melody, never louder
+export const DRONE_LEVEL_MAX = 1.0; // at full volume: about 10 dB louder than the melody
 export const DRONE_FADE = 2; // seconds to fade in or out (also the key-change crossfade)
 const DRONE_GLIDE = 0.08; // seconds: volume changes glide instead of jumping
 
 // Volume 0..1 -> gain. Squared, so the slider feels even to the ear.
-// The default volume (0.6) gives about 0.11: roughly 9 dB under the melody.
+// The default volume (0.33) gives about 0.11: roughly 9 dB under the melody.
 export const droneGain = volume => DRONE_LEVEL_MAX * volume ** 2;
 
 // Freeze a param at its current value at `time`, so a new ramp starts from there.
@@ -146,6 +148,7 @@ export function createBus(ctx, destination = ctx.destination) {
   dry.gain.value = DRY_LEVEL;
   wet.gain.value = WET_LEVEL;
   reverb.buffer = impulseResponse(ctx);
+  master.gain.value = MASTER_LEVEL;
 
   input.connect(dry).connect(master);
   dryInput.connect(dry);

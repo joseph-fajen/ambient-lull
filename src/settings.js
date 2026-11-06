@@ -21,7 +21,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   tone: 0.5,
   tempo: 40,
   drone: true,
-  droneVolume: 0.6, // 0 (silent) to 1 (about as loud as the melody)
+  droneVolume: 0.33, // 0 (silent) to 1 (about 10 dB louder than the melody)
   autoKey: false, // cycle the key round the circle of fifths
 });
 

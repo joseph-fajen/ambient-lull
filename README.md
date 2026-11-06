@@ -24,7 +24,7 @@ All changes apply live, from the next note (drone volume applies immediately).
 | Tempo | 20–120 BPM, one note per beat. Notes ring for about 8 s at 20 BPM, down to 2.5 s at 120 BPM. |
 | Sound | Soft (sine), Warm (triangle, default), Hollow (square), Bright (sawtooth), volume-matched. |
 | Tone | A low-pass filter from Dark to Bright, limited so even Bright never gets harsh. |
-| Drone | A soft bass on the root, two octaves down (on by default). Key changes crossfade it. The slider sets its volume, from silent up to about as loud as the melody, never louder. |
+| Drone | A soft bass on the root, two octaves down (on by default). Key changes crossfade it. The slider sets its volume, from silent up to about 10 dB louder than the melody. |
 | Presets | 4 named slots. Save stores the current settings (asking first if the slot is filled); Load applies them live. Kept in the browser's localStorage. |
 
 ## Test it
@@ -41,7 +41,7 @@ These cover the pure logic: scales and keys, the melody walk (a sweep of every k
 
 - the waveforms are volume-matched
 - notes and the drone start and end without clicks
-- the drone sits under the melody in every key at default volume, and is never louder than the melody at full volume
+- the drone sits under the melody in every key at default volume, and about 10 dB louder than the melody at full volume
 - the peak stays below 1.0 in the worst case
 - the output is silent after Stop
 
