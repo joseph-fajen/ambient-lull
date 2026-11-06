@@ -153,6 +153,7 @@ function kalimbaSound(ctx, out, time, { midi, duration, peak }, { tone }) {
 const HARP_SECONDS = 8; // longer than any note
 const HARP_DAMPING = 0.15; // 0.5 is the classic average (dullest, fastest fade); lower rings longer
 const HARP_PLUCK_SOFTNESS = 0.2; // smoothing of the pluck's noise: lower is softer
+const HARP_RMS = 0.243; // each pitch's loudness over its first 1.5 s
 const harpCache = new Map();
 function harpBuffer(ctx, midi) {
   const key = `${midi}@${ctx.sampleRate}`;
@@ -181,9 +182,13 @@ function harpBuffer(ctx, midi) {
     const b = y[j - 1] + frac * (y[j] - y[j - 1]);
     y[i] += loss * ((1 - HARP_DAMPING) * a + HARP_DAMPING * b);
   }
-  let max = 0;
-  for (const v of y) max = Math.max(max, Math.abs(v));
-  for (let i = 0; i < n; i++) y[i] /= max;
+  // Level each pitch by its loudness over the first 1.5 s, not its loudest sample, so
+  // every note sounds about as loud (higher strings fade faster, so they'd sound quieter).
+  let sum = 0;
+  const early = Math.ceil(1.5 * rate);
+  for (let i = 0; i < early; i++) sum += y[i] * y[i];
+  const level = Math.sqrt(sum / early) / HARP_RMS;
+  for (let i = 0; i < n; i++) y[i] /= level;
   const buffer = new AudioBuffer({ length: n, sampleRate: rate, numberOfChannels: 1 });
   buffer.copyToChannel(y, 0);
   harpCache.set(key, buffer);
@@ -224,6 +229,136 @@ function tineSound(ctx, out, time, { midi, duration, peak }, { tone }) {
   return body;
 }
 
+// Sustained sounds: a slow swell (SWELL seconds, shortened for short notes), held, with
+// gentle movement while they ring, then the usual long fade.
+export const SWELL = 0.9;
+
+// An oscillator that starts and stops with the note. `detune` is in cents.
+function oscillator(ctx, time, duration, type, frequency, detune = 0) {
+  const osc = ctx.createOscillator();
+  osc.type = type;
+  osc.frequency.value = frequency;
+  osc.detune.value = detune;
+  osc.start(time);
+  osc.stop(time + duration);
+  return osc;
+}
+
+// Vibrato: a slow wobble of `cents` on each oscillator's pitch, at `rate` Hz. It fades in
+// after the swell, as a player's would.
+function vibrato(ctx, time, duration, oscs, rate, cents) {
+  const lfo = oscillator(ctx, time, duration, 'sine', rate);
+  const depth = ctx.createGain();
+  depth.gain.setValueAtTime(0, time);
+  depth.gain.linearRampToValueAtTime(cents, time + Math.min(1.5, duration / 2));
+  lfo.connect(depth);
+  for (const osc of oscs) depth.connect(osc.detune);
+}
+
+// Pad: three sawtooths a few cents apart, so they drift in and out of phase (a slow
+// shimmer), with a soft sine an octave down for body.
+function padSound(ctx, out, time, { midi, duration, peak }, { tone }) {
+  const f = midiToFrequency(midi);
+  const filter = toneFilter(ctx, tone);
+  filter.connect(envelope(ctx, time, duration, peak * 1.22, SWELL)).connect(out);
+  const saws = ctx.createGain();
+  saws.gain.value = 0.4;
+  saws.connect(filter);
+  for (const cents of [-9, 0, 9]) oscillator(ctx, time, duration, 'sawtooth', f, cents).connect(saws);
+  const sub = ctx.createGain();
+  sub.gain.value = 0.5;
+  sub.connect(filter);
+  const body = oscillator(ctx, time, duration, 'sine', f / 2);
+  body.connect(sub);
+  return body;
+}
+
+// Strings: two sawtooths a little apart, like two players, with a delayed vibrato and
+// a bow-like swell.
+function stringsSound(ctx, out, time, { midi, duration, peak }, { tone }) {
+  const f = midiToFrequency(midi);
+  const filter = toneFilter(ctx, tone);
+  filter.connect(envelope(ctx, time, duration, peak * 1.86, SWELL * 0.8)).connect(out);
+  const oscs = [-5, 6].map(cents => oscillator(ctx, time, duration, 'sawtooth', f, cents));
+  const mix = ctx.createGain();
+  mix.gain.value = 0.5;
+  for (const osc of oscs) osc.connect(mix);
+  mix.connect(filter);
+  vibrato(ctx, time, duration, oscs, 5, 8);
+  return oscs[0];
+}
+
+// Choir: a buzzy source through three band-pass filters at the resonances of a sung
+// "ooh" (its formants), which is what makes a sound read as a voice.
+// [Hz, level, sharpness (Q)]. Kept broad: sharper bands sound more vowel-like, but they
+// made notes near a band up to 7 dB louder and others 10 dB quieter (measured).
+const OOH_FORMANTS = [[450, 1, 1], [850, 0.5, 2], [2400, 0.15, 3]];
+const CHOIR_PLAIN = 0.25;
+// Even with broad bands, notes near A4 (MIDI 69) come out loudest, falling off smoothly
+// either side; this evens it out (measured: 5.5 dB across the range without it).
+const CHOIR_CENTRE = 69;
+const CHOIR_TILT = 0.22; // dB per semitone from the centre
+const choirEvenness = midi => 10 ** ((CHOIR_TILT * Math.abs(midi - CHOIR_CENTRE)) / 20);
+function choirSound(ctx, out, time, { midi, duration, peak }, { tone }) {
+  const f = midiToFrequency(midi);
+  const filter = toneFilter(ctx, tone);
+  filter.connect(envelope(ctx, time, duration, peak * 0.75 * choirEvenness(midi), SWELL)).connect(out);
+  const oscs = [-7, 7].map(cents => oscillator(ctx, time, duration, 'sawtooth', f, cents)); // two singers
+  const source = ctx.createGain();
+  for (const osc of oscs) osc.connect(source);
+  const plain = ctx.createGain(); // a little of the voice unfiltered, so low notes (below the bands) don't fade
+  plain.gain.value = CHOIR_PLAIN;
+  source.connect(plain).connect(filter);
+  for (const [hz, level, q] of OOH_FORMANTS) {
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = hz;
+    band.Q.value = q;
+    const g = ctx.createGain();
+    g.gain.value = level;
+    source.connect(band).connect(g).connect(filter);
+  }
+  vibrato(ctx, time, duration, oscs, 4.5, 10);
+  return oscs[0];
+}
+
+// Breath: a flute-like sine with a touch of its octave, plus a little noise tuned to the
+// note (the air in the tone) and a gentle vibrato.
+const noiseCache = new Map();
+function noiseBuffer(ctx) {
+  if (noiseCache.has(ctx.sampleRate)) return noiseCache.get(ctx.sampleRate);
+  const rng = createRandom(1);
+  const data = Float32Array.from({ length: ctx.sampleRate * 2 }, () => rng() * 2 - 1);
+  const buffer = new AudioBuffer({ length: data.length, sampleRate: ctx.sampleRate, numberOfChannels: 1 });
+  buffer.copyToChannel(data, 0);
+  noiseCache.set(ctx.sampleRate, buffer);
+  return buffer;
+}
+
+function breathSound(ctx, out, time, { midi, duration, peak }, { tone }) {
+  const f = midiToFrequency(midi);
+  const filter = toneFilter(ctx, tone);
+  filter.connect(envelope(ctx, time, duration, peak * 0.81, SWELL * 0.5)).connect(out);
+  const tone1 = oscillator(ctx, time, duration, 'sine', f);
+  const tone2 = oscillator(ctx, time, duration, 'sine', f * 2);
+  const octave = ctx.createGain();
+  octave.gain.value = 0.15;
+  tone1.connect(filter);
+  tone2.connect(octave).connect(filter);
+  vibrato(ctx, time, duration, [tone1, tone2], 4.8, 6);
+  const air = new AudioBufferSourceNode(ctx, { buffer: noiseBuffer(ctx), loop: true });
+  const band = ctx.createBiquadFilter();
+  band.type = 'bandpass';
+  band.frequency.value = f * 2;
+  band.Q.value = 3;
+  const airLevel = ctx.createGain();
+  airLevel.gain.value = 0.35;
+  air.connect(band).connect(airLevel).connect(filter);
+  air.start(time, (midi * 0.137) % 1.5); // start somewhere different for each pitch
+  air.stop(time + duration);
+  return tone1;
+}
+
 export const SOUND_RECIPES = {
   sine: waveformSound('sine', 0.82), // -1.7 dB
   triangle: waveformSound('triangle', 1),
@@ -233,6 +368,10 @@ export const SOUND_RECIPES = {
   kalimba: kalimbaSound,
   harp: harpSound,
   tine: tineSound,
+  pad: padSound,
+  strings: stringsSound,
+  choir: choirSound,
+  breath: breathSound,
 };
 
 // One note. `level` (default 1) scales its volume; `pan` (default 0) is its place.

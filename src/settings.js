@@ -15,6 +15,10 @@ export const SOUNDS = [
   { id: 'kalimba', name: 'Kalimba', detail: 'thumb piano', group: 'struck' },
   { id: 'harp', name: 'Harp', detail: 'plucked string', group: 'struck' },
   { id: 'tine', name: 'Tine', detail: 'electric piano', group: 'struck' },
+  { id: 'pad', name: 'Pad', detail: 'synth pad', group: 'sustained' },
+  { id: 'strings', name: 'Strings', detail: 'bowed', group: 'sustained' },
+  { id: 'choir', name: 'Choir', detail: '"ooh" voices', group: 'sustained' },
+  { id: 'breath', name: 'Breath', detail: 'flute', group: 'sustained' },
 ];
 
 // Tone runs from 0 (darkest) to 1 (brightest); the performer maps it to a filter.

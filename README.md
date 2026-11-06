@@ -23,13 +23,21 @@ All changes apply live, from the next note (drone volume applies immediately).
 | Scale | Major pentatonic (default), minor pentatonic, major, natural minor, Dorian, Lydian, Japanese In. |
 | Tempo | 20–120 BPM: the length of a beat. A 1-beat note rings for about 8 s at 20 BPM, down to 2.5 s at 120 BPM. |
 | Rhythm | From Steady (one note per beat) to Varied. Varied notes last half a beat (always in pairs, so the melody lands back on the beat) up to 4 beats. Quick notes ring shorter and held notes longer. Default: in the middle, about half the notes 1 beat. |
-| Sound | Soft (sine), Warm (triangle, default), Hollow (square), Bright (sawtooth), volume-matched. |
+| Sound | 12 sounds, all volume-matched and even from low notes to high. **Classic:** Soft (sine), Warm (triangle, default), Hollow (square), Bright (sawtooth). **Struck:** Glass (bell), Kalimba (thumb piano), Harp (plucked string), Tine (electric piano): a soft strike, then a natural fade. **Sustained:** Pad, Strings, Choir ("ooh"), Breath (flute): a slow swell with gentle movement. |
 | Tone | A low-pass filter from Dark to Bright, limited so even Bright never gets harsh. |
 | Width | Stereo, from Mono to Wide. Each melody note gets its own place left to right, and its harmony note sits on the opposite side. The drone stays in the middle. Even at Wide, no note is entirely in one ear. Default: gently wide, about halfway. |
 | Harmony | Now and then a second, quieter note sounds with the melody: a 3rd, 4th or 5th, always in the scale and inside the melody's range. Harmony notes always ring long, as long as a 4-beat note, whatever the melody's rhythm. The slider sets how often, from Never to Often (about every other note). Default: about 1 note in 6. |
 | Drift | When on, the Harmony amount rises and falls on its own over 3 minutes: from a quarter of the slider's setting up to 1.75 times it (at most Often). It starts at the slider and rises first, timed from Start. The slider doesn't move, and Never stays Never. Off by default. |
 | Drone | A soft bass on the root, two octaves down (on by default). Key changes crossfade it. The slider sets its volume, from silent up to about 10 dB louder than the melody. |
 | Presets | 4 named slots. Save stores the current settings (asking first if the slot is filled); Load applies them live. Kept in the browser's localStorage. |
+
+## Listen to the sounds
+
+```sh
+npm run clips
+```
+
+Renders a 30-second clip of each sound to `clips/` (MP3 if ffmpeg is installed, otherwise WAV), with the same melody and default settings, so only the sound differs. Play them on any device. Options: `-- --sounds glass,harp` for some sounds only, `-- --blind` for a blind test (files named Sound A, B…, with the answers in `clips/answers.txt`). Needs Node 22+ and Chrome, as for the audio checks.
 
 ## Test it
 
@@ -51,7 +59,7 @@ This runs `tests/audio-checks.html` in a headless browser and prints the results
 
 The page renders sound offline (to numbers, not the speakers) and checks:
 
-- the waveforms are volume-matched
+- the sounds are volume-matched, and each one is even from its lowest note to its highest
 - notes and the drone start and end without clicks
 - the drone changes key without a pop
 - the drone sits under the melody in every key at default volume, and about 10 dB louder than the melody at full volume

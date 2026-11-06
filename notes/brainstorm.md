@@ -90,6 +90,9 @@ Picked to spread across the things a listener hears first: how a note starts, wh
 - **2026-11-06:** step 1 done (sounds table, output unchanged). The struck group is built: Glass, Kalimba, Harp and Tine, volume-matched by measurement. `npm run clips` renders listening clips (`--blind` for a blind test).
 - Harp plays up to about 1 dB quieter as Tone brightens: a brighter pluck is spikier, and it took the loudest mix to 0.914.
 - The overall output came down about 0.5 dB (`MASTER_LEVEL` 0.57 → 0.54), so the struck sounds keep room under the peak limit (worst was 0.895, Kalimba).
+- The sustained group is built: Pad, Strings, Choir and Breath. All 12 sounds are in the app.
+- **Found while tuning:** a sound can match on average yet be uneven from note to note. Choir's first draft used narrow vowel filters, which made notes near a filter up to 7 dB louder and others 10 dB quieter. Broader filters plus a small per-note correction fixed it, and Harp's notes are now levelled by their early loudness. A new audio check holds every sound within 3 dB from its lowest note to its highest.
+- At the app's defaults (with reverb), Pad, Strings and Choir come out 1.4–1.6 dB louder than Warm. That's within the 2 dB matching tolerance, so it's left as is.
 
 ### How to build it
 

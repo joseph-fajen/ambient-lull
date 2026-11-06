@@ -326,6 +326,27 @@
       report(worstSpread <= 2, 'Sounds are volume-matched (within 2 dB)', lines.join(' | '));
     }
 
+    // 5b. Even across the range: within each sound, every note of the melody range is
+    // about as loud as the others, so no note jumps out or fades away. One 3 s note per
+    // semitone, middle tone, whole note measured.
+    async function checkEvenness() {
+      const lines = [];
+      let worst = { range: 0 };
+      for (const w of SOUNDS) {
+        const levels = [];
+        for (let midi = 42; midi <= 77; midi++) {
+          const buf = await render(3.1, ctx =>
+            playNote(ctx, ctx.destination, 0, { midi, duration: 3 }, { sound: w.id, tone: 0.5, width: 0 }));
+          levels.push(20 * Math.log10(rms(buf, 0, 3.1)));
+        }
+        const range = Math.max(...levels) - Math.min(...levels);
+        lines.push(`${w.id} ${range.toFixed(1)}`);
+        if (range > worst.range) worst = { range, id: w.id };
+      }
+      report(worst.range <= 3, 'Every sound is even across the melody range (within 3 dB)',
+        `loudest minus quietest note, MIDI 42–77: ${lines.join(', ')} dB`);
+    }
+
     // 6. No pop at a key change: the old drone fades out smoothly while the new one fades
     // in. Covers the cases that used to pop: after moving the volume slider, and a second
     // key change while the new drone is still fading in.
@@ -365,6 +386,7 @@
     try {
       await checkKeyChange();
       await checkVolumeMatch();
+      await checkEvenness();
       await checkClicks();
       await checkDrone();
       await checkPeak();
