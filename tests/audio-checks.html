@@ -22,6 +22,9 @@
     import { nextNote, beatInterval, createRandom, dronePitch, createComposer, noteLength, NOTE_LENGTHS, TEMPO_MAX, DRIFT_PERIOD } from '../src/music.js';
     import { SOUNDS } from '../src/settings.js';
     import { LOOKAHEAD } from '../src/scheduler.js';
+    import { SAMPLE_SETS, loadSampleSet } from '../src/samples.js';
+
+    await Promise.all(Object.keys(SAMPLE_SETS).map(name => loadSampleSet(name, '../')));
 
     const RATE = 44100;
     const results = [];

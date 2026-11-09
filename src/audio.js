@@ -7,6 +7,7 @@
 // Each run of the engine gets its own bus, so fading its master also fades the
 // reverb tail.
 import { createRandom } from './music.js';
+import { sampleFor } from './samples.js';
 
 export const ATTACK = 0.4; // seconds of fade-in
 export const VOICE_PEAK = 0.2; // loudest point of one note, leaving headroom for overlaps
@@ -359,6 +360,30 @@ function breathSound(ctx, out, time, { midi, duration, peak }, { tone }) {
   return tone1;
 }
 
+// Piano: a recorded grand piano (src/samples.js), the nearest recorded note retuned to
+// the one wanted. A real piano is never harsh, so its Tone range sits higher than the
+// synthesized sounds' (PIANO_TONE_LIFT times the cutoff). The recordings fade on their
+// own. Until they've loaded, the note plays as Warm, so Start never waits.
+// Like Harp, it plays a little quieter as Tone brightens (about 0.5 dB at the brightest):
+// a bright piano strike is spiky, and at full gain it took the loudest mix to 0.899.
+const PIANO_GAIN = 6.2;
+const PIANO_BRIGHT_TRIM = 0.06;
+const PIANO_TONE_LIFT = 2;
+function pianoSound(ctx, out, time, note, settings) {
+  const sample = sampleFor('piano', note.midi);
+  if (!sample) return SOUND_RECIPES.triangle(ctx, out, time, note, settings);
+  const { duration, peak } = note;
+  const env = struckEnvelope(ctx, time, duration, peak * PIANO_GAIN * (1 - PIANO_BRIGHT_TRIM * settings.tone) * sample.level, 30);
+  const filter = toneFilter(ctx, settings.tone);
+  filter.frequency.value *= PIANO_TONE_LIFT;
+  const src = new AudioBufferSourceNode(ctx, { buffer: sample.buffer, playbackRate: sample.rate });
+  src.connect(filter).connect(env.input);
+  env.output.connect(out);
+  src.start(time);
+  src.stop(time + duration);
+  return src;
+}
+
 export const SOUND_RECIPES = {
   sine: waveformSound('sine', 0.82), // -1.7 dB
   triangle: waveformSound('triangle', 1),
@@ -368,6 +393,7 @@ export const SOUND_RECIPES = {
   kalimba: kalimbaSound,
   harp: harpSound,
   tine: tineSound,
+  piano: pianoSound,
   pad: padSound,
   strings: stringsSound,
   choir: choirSound,

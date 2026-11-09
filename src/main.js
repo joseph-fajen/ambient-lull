@@ -5,6 +5,10 @@ import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX, beatInterval, createComposer, drone
 import { playWithHarmony, createBus, startDrone } from './audio.js';
 import { createTransport, createKeyCycle } from './scheduler.js';
 import { createPresetStore, NAME_MAX } from './presets.js';
+import { SAMPLE_SETS, loadSampleSet } from './samples.js';
+
+// Recorded sounds load in the background; until then they play as a stand-in.
+for (const name of Object.keys(SAMPLE_SETS)) loadSampleSet(name).catch(err => console.warn(err.message));
 
 const TICK_MS = 50; // how often the timer loop books notes
 

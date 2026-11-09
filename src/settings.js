@@ -15,6 +15,7 @@ export const SOUNDS = [
   { id: 'kalimba', name: 'Kalimba', detail: 'thumb piano', group: 'struck' },
   { id: 'harp', name: 'Harp', detail: 'plucked string', group: 'struck' },
   { id: 'tine', name: 'Tine', detail: 'electric piano', group: 'struck' },
+  { id: 'piano', name: 'Piano', detail: 'grand piano', group: 'struck' },
   { id: 'pad', name: 'Pad', detail: 'synth pad', group: 'sustained' },
   { id: 'strings', name: 'Strings', detail: 'bowed', group: 'sustained' },
   { id: 'choir', name: 'Choir', detail: '"ooh" voices', group: 'sustained' },

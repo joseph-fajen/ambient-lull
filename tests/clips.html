@@ -9,6 +9,9 @@
     import { createBus, startDrone, playWithHarmony } from '../src/audio.js';
     import { DEFAULT_SETTINGS, SOUNDS } from '../src/settings.js';
     import { createComposer, createRandom, beatInterval, dronePitch } from '../src/music.js';
+    import { SAMPLE_SETS, loadSampleSet } from '../src/samples.js';
+
+    await Promise.all(Object.keys(SAMPLE_SETS).map(name => loadSampleSet(name, '../')));
 
     const params = new URLSearchParams(location.search);
     const SECONDS = Number(params.get('seconds')) || 30;

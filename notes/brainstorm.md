@@ -94,6 +94,9 @@ Picked to spread across the things a listener hears first: how a note starts, wh
 - **Found while tuning:** a sound can match on average yet be uneven from note to note. Choir's first draft used narrow vowel filters, which made notes near a filter up to 7 dB louder and others 10 dB quieter. Broader filters plus a small per-note correction fixed it, and Harp's notes are now levelled by their early loudness. A new audio check holds every sound within 3 dB from its lowest note to its highest.
 - At the app's defaults (with reverb), Pad, Strings and Choir come out 1.4–1.6 dB louder than Warm. That's within the 2 dB matching tolerance, so it's left as is.
 
+- **2026-11-09: recorded samples.** Idea: the synthesized sounds the owner likes best (Kalimba, Pad) are the ones synthesis does naturally; acoustic instruments are where synthesis falls short and recordings win. Prototype: **Piano**, from the Salamander Grand Piano (CC-BY 3.0, credited in `samples/CREDITS.md`). 13 MP3 notes, every 3 semitones, under 1 MB; each note plays the nearest one, retuned by at most 1.5 semitones. They load in the background; until then Piano plays as Warm. Mixed to mono, with the usual soft strike. Volume-matched, even within 2.1 dB, and a little quieter at bright Tone for peak headroom. No library needed.
+- **Open:** does the piano beat the synthesized sounds by ear? If so, which instruments next (harp, strings, vibraphone, felt piano)? Should sampled ones replace the weaker synthesized ones? Keep the recording's stereo, and a crisper strike?
+
 ### How to build it
 
 1. **Refactor first, no sound change.** Make each sound an entry in a `SOUNDS` table (label, smaller technical name, recipe). The current four share one recipe. The audio checks should prove the output is identical, as with stereo's Mono check.

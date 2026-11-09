@@ -23,7 +23,7 @@ All changes apply live, from the next note (drone volume applies immediately).
 | Scale | Major pentatonic (default), minor pentatonic, major, natural minor, Dorian, Lydian, Japanese In. |
 | Tempo | 20–120 BPM: the length of a beat. A 1-beat note rings for about 8 s at 20 BPM, down to 2.5 s at 120 BPM. |
 | Rhythm | From Steady (one note per beat) to Varied. Varied notes last half a beat (always in pairs, so the melody lands back on the beat) up to 4 beats. Quick notes ring shorter and held notes longer. Default: in the middle, about half the notes 1 beat. |
-| Sound | 12 sounds, all volume-matched and even from low notes to high. **Classic:** Soft (sine), Warm (triangle, default), Hollow (square), Bright (sawtooth). **Struck:** Glass (bell), Kalimba (thumb piano), Harp (plucked string), Tine (electric piano): a soft strike, then a natural fade. **Sustained:** Pad, Strings, Choir ("ooh"), Breath (flute): a slow swell with gentle movement. |
+| Sound | 13 sounds, all volume-matched and even from low notes to high. **Classic:** Soft (sine), Warm (triangle, default), Hollow (square), Bright (sawtooth). **Struck:** Glass (bell), Kalimba (thumb piano), Harp (plucked string), Tine (electric piano), Piano (a recorded grand piano): a soft strike, then a natural fade. **Sustained:** Pad, Strings, Choir ("ooh"), Breath (flute): a slow swell with gentle movement. |
 | Tone | A low-pass filter from Dark to Bright, limited so even Bright never gets harsh. |
 | Width | Stereo, from Mono to Wide. Each melody note gets its own place left to right, and its harmony note sits on the opposite side. The drone stays in the middle. Even at Wide, no note is entirely in one ear. Default: gently wide, about halfway. |
 | Harmony | Now and then a second, quieter note sounds with the melody: a 3rd, 4th or 5th, always in the scale and inside the melody's range. Harmony notes always ring long, as long as a 4-beat note, whatever the melody's rhythm. The slider sets how often, from Never to Often (about every other note). Default: about 1 note in 6. |
@@ -77,6 +77,7 @@ src/
   music.js       composer (pure): keys, scales, circle of fifths, the melody walk, harmony notes, note lengths (rhythm), stereo places, harmony drift, drone pitch, tempo → note length
   settings.js    the settings object (pure): defaults, sounds table, validation
   scheduler.js   timing (pure): which notes are due in the lookahead window; Start/Stop states; key-cycle countdown
+  samples.js     recorded sounds: which files, loading them, the nearest recorded note for each pitch
   audio.js       performer: a recipe for each sound, the note player (with its stereo place), harmony level, the drone, reverb, and each run's output chain
   presets.js     the 4 preset slots; storage is passed in
   main.js        the page: controls, the timer loop, connecting everything
@@ -85,6 +86,7 @@ tests/
   audio-checks.html    offline audio measurements, opened in the browser
   run-audio-checks.mjs runs those in headless Chrome from the command line
 notes/           design thinking and the build plan
+samples/         recorded notes for the sampled sounds, and their credits (CREDITS.md)
 ```
 
 - **One settings object.** The controls write to it, and the engine reads it before every note. Presets save and load it.

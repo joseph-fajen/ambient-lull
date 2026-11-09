@@ -4,7 +4,7 @@ Generative ambient music in the browser: plain HTML and JavaScript modules on th
 
 ## Where things stand
 
-- **Built:** v1 plus everything in `notes/build-plan.md` ("After v1"), and 12 sounds (4 classic, 4 struck, 4 sustained). See `notes/brainstorm.md`, section 3.
+- **Built:** v1 plus everything in `notes/build-plan.md` ("After v1"), and 13 sounds (4 classic, 5 struck including a recorded piano, 4 sustained). See `notes/brainstorm.md`, section 3.
 - **Next and open:** `notes/brainstorm.md` holds the decisions and open questions: remove the Width control (fixed wide), narrow Tempo to 20–60 BPM, custom chord progressions alongside Cycle keys, then a more beautiful UI. Harmony changes and a mobile app are parked.
 - **Still to do:** the listening checks in `notes/build-plan.md`. Only the owner can do those.
 
