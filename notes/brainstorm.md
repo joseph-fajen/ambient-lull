@@ -98,6 +98,10 @@ Picked to spread across the things a listener hears first: how a note starts, wh
 - **2026-11-09: the owner likes the piano** ("very nice"). Samples work for this app.
 - **Open:** which instruments next (harp, strings, vibraphone, felt piano)? Should sampled ones replace the weaker synthesized ones? Keep the recording's stereo, and a crisper strike?
 
+- **2026-11-09: three more recorded sounds, for listening.** Searched for open licences. No openly licensed felt piano exists that we found (the free ones, like Spitfire LABS Soft Piano, Jon Meyer's Kawai Felt Piano or Pianobook packs, don't allow redistribution or state no licence). Built from VCSL (CC0): **Soft piano** (a Knight upright played softly, with a darker Tone and a gentler strike, as a felt-piano stand-in), **Concert harp**, and **Vibes** (vibraphone, soft mallets). Strings left out for now (owner's choice; they'd also need looping).
+- **Found while tuning:** a recording's loudness has to be measured the way it will be heard. Levelling each note by its plain loudness left the vibraphone 5.7 dB uneven (its lowest bar fades fastest) and the harp 3.2 dB (its A4 has a sharp pluck that the soft strike rounds off). Weighting by the note's own shape (strike rise, then fade, at the played speed) brought every recorded sound within 1.3 dB, and the piano from 2.1 to 0.3 dB.
+- **Open:** which recorded sounds to keep, and whether Concert harp replaces the synthesized Harp. 16 sounds is a lot for the picker.
+
 ### How to build it
 
 1. **Refactor first, no sound change.** Make each sound an entry in a `SOUNDS` table (label, smaller technical name, recipe). The current four share one recipe. The audio checks should prove the output is identical, as with stereo's Mono check.

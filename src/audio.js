@@ -87,9 +87,9 @@ const waveformSound = (type, gain) => (ctx, out, time, { midi, duration, peak },
 export const STRUCK_ATTACK = 0.04;
 const RISE_SHAPE = Float32Array.from({ length: 64 }, (_, i) => (i / 63) ** 2);
 
-function struckEnvelope(ctx, time, duration, peak, decay) {
+function struckEnvelope(ctx, time, duration, peak, decay, attack = STRUCK_ATTACK) {
   const amp = ctx.createGain();
-  const rise = Math.min(STRUCK_ATTACK, duration / 4);
+  const rise = Math.min(attack, duration / 4);
   amp.gain.setValueCurveAtTime(RISE_SHAPE.map(x => x * peak), time, rise);
   amp.gain.setValueCurveAtTime(RELEASE_SHAPE.map(x => x * peak), time + rise, duration - rise);
   const fade = ctx.createGain();
@@ -360,29 +360,31 @@ function breathSound(ctx, out, time, { midi, duration, peak }, { tone }) {
   return tone1;
 }
 
-// Piano: a recorded grand piano (src/samples.js), the nearest recorded note retuned to
-// the one wanted. A real piano is never harsh, so its Tone range sits higher than the
-// synthesized sounds' (PIANO_TONE_LIFT times the cutoff). The recordings fade on their
-// own. Until they've loaded, the note plays as Warm, so Start never waits.
-// Like Harp, it plays a little quieter as Tone brightens (about 0.5 dB at the brightest):
-// a bright piano strike is spiky, and at full gain it took the loudest mix to 0.899.
-const PIANO_GAIN = 6.2;
-const PIANO_BRIGHT_TRIM = 0.06;
-const PIANO_TONE_LIFT = 2;
-function pianoSound(ctx, out, time, note, settings) {
-  const sample = sampleFor('piano', note.midi);
-  if (!sample) return SOUND_RECIPES.triangle(ctx, out, time, note, settings);
-  const { duration, peak } = note;
-  const env = struckEnvelope(ctx, time, duration, peak * PIANO_GAIN * (1 - PIANO_BRIGHT_TRIM * settings.tone) * sample.level, 30);
-  const filter = toneFilter(ctx, settings.tone);
-  filter.frequency.value *= PIANO_TONE_LIFT;
-  const src = new AudioBufferSourceNode(ctx, { buffer: sample.buffer, playbackRate: sample.rate });
-  src.connect(filter).connect(env.input);
-  env.output.connect(out);
-  src.start(time);
-  src.stop(time + duration);
-  return src;
-}
+// Recorded sounds (src/samples.js): the nearest recorded note, retuned to the one
+// wanted, through the usual soft strike. The recordings fade on their own. Until a set
+// has loaded, its notes play as Warm, so Start never waits. Options:
+//   gain: volume matching, against Warm at the middle Tone (measured)
+//   toneLift: a real instrument is never harsh, so its Tone range can sit higher than
+//     the synthesized sounds' (this times the cutoff)
+//   brightTrim: plays this much quieter at the brightest Tone. A bright strike is
+//     spiky; without it, Piano took the loudest mix to 0.91 (limit 0.9).
+//   attack: how long the strike takes to rise (seconds)
+const sampledSound = (set, { gain, toneLift = 2, brightTrim = 0, attack = STRUCK_ATTACK }) =>
+  (ctx, out, time, note, settings) => {
+    const sample = sampleFor(set, note.midi, attack);
+    if (!sample) return SOUND_RECIPES.triangle(ctx, out, time, note, settings);
+    const { duration, peak } = note;
+    const level = peak * gain * (1 - brightTrim * settings.tone) * sample.level;
+    const env = struckEnvelope(ctx, time, duration, level, 30, attack);
+    const filter = toneFilter(ctx, settings.tone);
+    filter.frequency.value *= toneLift;
+    const src = new AudioBufferSourceNode(ctx, { buffer: sample.buffer, playbackRate: sample.rate });
+    src.connect(filter).connect(env.input);
+    env.output.connect(out);
+    src.start(time);
+    src.stop(time + duration);
+    return src;
+  };
 
 export const SOUND_RECIPES = {
   sine: waveformSound('sine', 0.82), // -1.7 dB
@@ -393,7 +395,11 @@ export const SOUND_RECIPES = {
   kalimba: kalimbaSound,
   harp: harpSound,
   tine: tineSound,
-  piano: pianoSound,
+  piano: sampledSound('piano', { gain: 8.3, brightTrim: 0.12 }),
+  'harp-recorded': sampledSound('harp', { gain: 7.9, brightTrim: 0.06 }),
+  vibraphone: sampledSound('vibraphone', { gain: 7.1 }),
+  // Soft piano: leans towards a felt piano, with a darker Tone and a gentler strike.
+  upright: sampledSound('upright', { gain: 7.9, toneLift: 1.2, attack: 0.08 }),
   pad: padSound,
   strings: stringsSound,
   choir: choirSound,

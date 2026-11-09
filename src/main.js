@@ -5,10 +5,14 @@ import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX, beatInterval, createComposer, drone
 import { playWithHarmony, createBus, startDrone } from './audio.js';
 import { createTransport, createKeyCycle } from './scheduler.js';
 import { createPresetStore, NAME_MAX } from './presets.js';
-import { SAMPLE_SETS, loadSampleSet } from './samples.js';
+import { loadSampleSet } from './samples.js';
 
-// Recorded sounds load in the background; until then they play as a stand-in.
-for (const name of Object.keys(SAMPLE_SETS)) loadSampleSet(name).catch(err => console.warn(err.message));
+// A recorded sound's notes load in the background the first time it's picked (only once);
+// until then it plays as a stand-in.
+const loadSamplesFor = id => {
+  const set = SOUNDS.find(s => s.id === id)?.samples;
+  if (set) loadSampleSet(set).catch(err => console.warn(err.message));
+};
 
 const TICK_MS = 50; // how often the timer loop books notes
 
@@ -141,6 +145,7 @@ function showSettings() {
   keyCycleValue.textContent = `every ${settings.keyCycleSeconds} s`;
   droneVolumeSlider.value = settings.droneVolume;
   soundGroup.querySelector(`input[value="${settings.sound}"]`).checked = true;
+  loadSamplesFor(settings.sound);
   toneSlider.value = settings.tone;
   harmonySlider.value = settings.harmony;
   varietySlider.value = settings.variety;
@@ -176,7 +181,7 @@ droneVolumeSlider.addEventListener('input', () => {
   settings.droneVolume = Number(droneVolumeSlider.value);
   drone?.setVolume(settings.droneVolume, ctx.currentTime);
 });
-soundGroup.addEventListener('change', e => { settings.sound = e.target.value; });
+soundGroup.addEventListener('change', e => { settings.sound = e.target.value; loadSamplesFor(settings.sound); });
 toneSlider.addEventListener('input', () => { settings.tone = Number(toneSlider.value); });
 harmonySlider.addEventListener('input', () => { settings.harmony = Number(harmonySlider.value); });
 varietySlider.addEventListener('input', () => { settings.variety = Number(varietySlider.value); });

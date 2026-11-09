@@ -3,7 +3,8 @@
 import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX } from './music.js';
 
 // The sounds. `id` is saved in presets; `name` is the big label and `detail` the small
-// one under it. `group` sorts them in the picker. The performer (src/audio.js) has a
+// one under it. `group` sorts them in the picker. `samples` names a set of recordings
+// (src/samples.js) that the sound needs loaded. The performer (src/audio.js) has a
 // recipe for each id. The first four are the built-in Web Audio waveforms; their ids
 // are the waveform names, so presets from before this table still load.
 export const SOUNDS = [
@@ -15,7 +16,10 @@ export const SOUNDS = [
   { id: 'kalimba', name: 'Kalimba', detail: 'thumb piano', group: 'struck' },
   { id: 'harp', name: 'Harp', detail: 'plucked string', group: 'struck' },
   { id: 'tine', name: 'Tine', detail: 'electric piano', group: 'struck' },
-  { id: 'piano', name: 'Piano', detail: 'grand piano', group: 'struck' },
+  { id: 'piano', name: 'Piano', detail: 'grand piano', group: 'struck', samples: 'piano' },
+  { id: 'upright', name: 'Soft piano', detail: 'upright, played softly', group: 'struck', samples: 'upright' },
+  { id: 'harp-recorded', name: 'Concert harp', detail: 'recorded harp', group: 'struck', samples: 'harp' },
+  { id: 'vibraphone', name: 'Vibes', detail: 'vibraphone', group: 'struck', samples: 'vibraphone' },
   { id: 'pad', name: 'Pad', detail: 'synth pad', group: 'sustained' },
   { id: 'strings', name: 'Strings', detail: 'bowed', group: 'sustained' },
   { id: 'choir', name: 'Choir', detail: '"ooh" voices', group: 'sustained' },

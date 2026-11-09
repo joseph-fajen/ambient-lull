@@ -4,7 +4,7 @@ Generative ambient music in the browser: plain HTML and JavaScript modules on th
 
 ## Where things stand
 
-- **Built:** v1 plus everything in `notes/build-plan.md` ("After v1"), and 13 sounds (4 classic, 5 struck including a recorded piano, 4 sustained). See `notes/brainstorm.md`, section 3.
+- **Built:** v1 plus everything in `notes/build-plan.md` ("After v1"), and 16 sounds (4 classic, 8 struck including 4 recorded instruments, 4 sustained). See `notes/brainstorm.md`, section 3.
 - **Next and open:** `notes/brainstorm.md` holds the decisions and open questions: remove the Width control (fixed wide), narrow Tempo to 20–60 BPM, custom chord progressions alongside Cycle keys, then a more beautiful UI. Harmony changes and a mobile app are parked.
 - **Still to do:** the listening checks in `notes/build-plan.md`. Only the owner can do those.
 
@@ -22,6 +22,7 @@ Generative ambient music in the browser: plain HTML and JavaScript modules on th
 - **Keep the composer pure.** `src/music.js` decides which note and when, and is tested without audio. `src/audio.js` decides how it sounds.
 - **Measure, don't guess.** Volume matching, peak headroom and evenness are set by measurement, and the audio checks enforce them. After changing anything in `src/audio.js`, run `npm run test:audio`.
 - **Adding a sound:** add an entry to `SOUNDS` in `src/settings.js` and a recipe to `SOUND_RECIPES` in `src/audio.js`. Then set its gain so it matches Warm at the middle Tone. Check its evenness across MIDI 42–77, not just its average: Choir's first version averaged right but swung 23 dB from note to note. Check the worst-case peak too (limit 0.9).
+- **Adding a recorded sound:** put mono MP3s, named by their real pitch, in `samples/<set>/`, add the set to `SAMPLE_SETS` in `src/samples.js`, a `sampledSound` recipe, and a `SOUNDS` entry with `samples`. Credit the source in `samples/CREDITS.md`, and use only open licences (CC0 or CC-BY). Measure each file's real pitch: VCSL names some instruments an octave low. Levelling per note is automatic; set the gain by measurement.
 - **Old presets must keep loading.** Settings are stored by name, and `normalizeSettings` fills in or falls back. The `waveform` field is read as `sound`.
 - Comments and notes use plain English, as in the existing files.
 
