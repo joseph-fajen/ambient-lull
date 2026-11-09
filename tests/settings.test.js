@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULT_SETTINGS, SOUNDS, TONE_MIN, TONE_MAX, KEY_CYCLE_MIN, KEY_CYCLE_MAX, normalizeSettings } from '../src/settings.js';
+import { DEFAULT_SETTINGS, SOUNDS, TONE_MIN, TONE_MAX, KEY_CYCLE_MIN, KEY_CYCLE_MAX, SOUND_CYCLE_SECONDS, normalizeSettings, nextInSoundCycle } from '../src/settings.js';
 import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX } from '../src/music.js';
 import { SOUND_RECIPES } from '../src/audio.js';
 
@@ -41,7 +41,7 @@ test('presets with a removed sound load the closest one kept', () => {
 });
 
 test('a complete valid object comes back unchanged', () => {
-  const s = { key: 'F#', scale: 'dorian', sound: 'kalimba', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true, keyCycleSeconds: 45, harmony: 0.8, variety: 0.1, width: 0.2, drift: true };
+  const s = { key: 'F#', scale: 'dorian', sound: 'kalimba', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true, keyCycleSeconds: 45, autoSound: true, harmony: 0.8, variety: 0.1, width: 0.2, drift: true };
   assert.deepEqual(normalizeSettings(s), s);
 });
 
@@ -51,7 +51,7 @@ test('missing fields get defaults', () => {
 });
 
 test('unknown values fall back to defaults', () => {
-  const s = normalizeSettings({ key: 'H', scale: 'bebop', sound: 'noise', tone: 'bright', tempo: 'fast', drone: 'yes', droneVolume: 'loud', autoKey: 'sometimes', keyCycleSeconds: 'often', harmony: 'lots', variety: 'some', width: 'wide', drift: 'yes' });
+  const s = normalizeSettings({ key: 'H', scale: 'bebop', sound: 'noise', tone: 'bright', tempo: 'fast', drone: 'yes', droneVolume: 'loud', autoKey: 'sometimes', keyCycleSeconds: 'often', autoSound: 'often', harmony: 'lots', variety: 'some', width: 'wide', drift: 'yes' });
   assert.deepEqual(s, DEFAULT_SETTINGS);
 });
 
@@ -118,7 +118,7 @@ test('harmony runs 0 to 1, default 0.33, clamped', () => {
 test('an old preset without harmony loads with the default', () => {
   const old = { key: 'G', scale: 'dorian', waveform: 'sine', tone: 0.2, tempo: 30, drone: true, droneVolume: 0.5, autoKey: false, keyCycleSeconds: 30 };
   const { waveform, ...rest } = old; // sine was removed: the closest kept is Pad
-  assert.deepEqual(normalizeSettings(old), { ...rest, sound: 'pad', harmony: 0.33, variety: 0.5, width: 0.5, drift: false });
+  assert.deepEqual(normalizeSettings(old), { ...rest, sound: 'pad', autoSound: false, harmony: 0.33, variety: 0.5, width: 0.5, drift: false });
 });
 
 test('variety runs 0 to 1, default 0.5, clamped', () => {
@@ -141,4 +141,50 @@ test('drift is a true/false setting, off by default', () => {
   assert.equal(DEFAULT_SETTINGS.drift, false);
   assert.equal(normalizeSettings({ drift: true }).drift, true);
   for (const junk of [1, 'true', null]) assert.equal(normalizeSettings({ drift: junk }).drift, false);
+});
+
+test('sound cycle: each step moves to the next sound, wrapping round', () => {
+  let state = { sound: 'piano', scale: 'major', changes: 0 };
+  const seen = [];
+  for (let i = 0; i < SOUNDS.length; i++) {
+    seen.push(state.sound);
+    state = nextInSoundCycle(state);
+  }
+  assert.deepEqual(seen, SOUNDS.map(w => w.id));
+  assert.equal(state.sound, 'piano', 'after Pad comes Piano again');
+});
+
+test('sound cycle: the scale moves on with every 6th sound change, on the same step', () => {
+  let state = { sound: 'piano', scale: 'major-pentatonic', changes: 0 };
+  for (let i = 1; i < SOUNDS.length; i++) {
+    state = nextInSoundCycle(state);
+    assert.equal(state.scale, 'major-pentatonic', `change ${i}`);
+  }
+  state = nextInSoundCycle(state);
+  assert.deepEqual(state, { sound: 'piano', scale: 'minor-pentatonic', changes: 0 });
+});
+
+test('sound cycle: starts from any sound, and visits every scale before repeating', () => {
+  let state = { sound: 'harp', scale: 'dorian', changes: 0 };
+  const scales = [];
+  for (let i = 0; i < SCALES.length * SOUNDS.length; i++) {
+    if (state.changes === 0) scales.push(state.scale);
+    assert.ok(SOUNDS.some(w => w.id === state.sound));
+    state = nextInSoundCycle(state);
+  }
+  assert.deepEqual([...scales].sort(), SCALES.map(s => s.id).sort(), 'each scale once');
+  assert.deepEqual(state, { sound: 'harp', scale: 'dorian', changes: 0 }, 'back where it started after 84 minutes');
+});
+
+test('sound cycle: after the last scale comes the first', () => {
+  const last = SCALES.at(-1).id;
+  const state = nextInSoundCycle({ sound: 'pad', scale: last, changes: SOUNDS.length - 1 });
+  assert.equal(state.scale, SCALES[0].id);
+});
+
+test('sound cycle: 2 minutes per sound, off by default, saved as a boolean', () => {
+  assert.equal(SOUND_CYCLE_SECONDS, 120);
+  assert.equal(DEFAULT_SETTINGS.autoSound, false);
+  assert.equal(normalizeSettings({ autoSound: true }).autoSound, true);
+  assert.equal(normalizeSettings({ autoSound: 'yes' }).autoSound, false);
 });

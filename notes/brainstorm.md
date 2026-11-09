@@ -134,3 +134,27 @@ The options, cheapest first:
   - A native app can ask the system for background audio, which solves both. This is the main reason to go native.
 - **Suggested path:** host it first and try it on phones (cheap, and it shows the real problems). Add the PWA next. Go native only if background playback is needed and the web can't do it well enough.
 - **Open:** how will you mostly use it on a phone: screen on and in front of you, or locked in a pocket or on the nightstand?
+
+## 6. Cycle sounds & scales
+
+- **Wanted (2026-11-09):** every 2 minutes the sound moves to the next one (Piano → Upright → Harp → Vibes → Kalimba → Pad → Piano …). After all 6 sounds have played, the Scale moves to the next one and stays for the next 6 sounds. A cycle within a cycle, running until Stop.
+- **Length:** 7 scales × 6 sounds × 2 min. Each scale lasts 12 minutes, and the whole trip takes 84 minutes before it repeats.
+- **Decided (2026-11-09):**
+  - **One checkbox**, "Cycle sounds & scales", fixed at 2 minutes per sound. No slider ("toy, not a settings form").
+  - **Switch at the next note.** The engine already reads the sound before each note, so ringing notes fade out in the old sound with their reverb tail. No crossfade unless it sounds abrupt by ear (listen closely to the changes to and from Pad).
+  - **The scale changes on the 6th sound change**, on the same note as the sound change: a new chapter. Counting changes, not "back to Piano", means it starts from whatever sound and scale are picked.
+  - **Picking a sound by hand** switches straight away and restarts the 2-minute countdown (like Cycle keys). The count towards the next scale carries on.
+  - **Picking a scale by hand** takes effect, and the cycle carries on from it.
+  - **Cycle keys stays independent.** Both can be on at once.
+  - **Order** follows the `SOUNDS` and `SCALES` tables, wrapping round.
+  - **The sound buttons and Scale menu update on screen** as they change, as the Key menu does.
+  - **Saved in presets** (on/off).
+  - **Load the recordings ahead of time**, so a recorded sound doesn't play as its Kalimba stand-in the first time it comes up. For example, load the next sound when cycling is switched on and after each change.
+  - **Testing:** unit tests for the counting. A temporary fast mode (`?fast`, 10 s per sound) for listening in the browser, **removed before finishing**.
+
+### Progress
+
+- **2026-11-09: step 1 done (logic and tests, nothing visible yet).** `nextInSoundCycle()` and `SOUND_CYCLE_SECONDS` in `src/settings.js`, and an `autoSound` setting (off by default, saved in presets; old presets load with it off). The 2-minute timer will reuse `createKeyCycle()` from `src/scheduler.js`, which is a plain countdown. Next: step 2, wiring it into the app with `?fast` for listening.
+- **2026-11-09: step 2 done (in the app, waiting to be heard).** A "Cycle sounds" checkbox under the sound picker ("…and scales"). While playing, the sound moves on every 2 minutes and the scale with every 6th change; the picker and Scale menu follow. The next recorded sound loads one turn ahead. Start, switching it on and loading a preset start a fresh round; picking a sound by hand restarts the 2 minutes and keeps the count. Checked in headless Chrome with `?fast` (10 s per sound): all six in order, the scale changed with the return to Piano, and a hand-picked sound got its full turn. Still temporary: `?fast` in `src/main.js`.
+- **2026-11-09: the owner listened and it works fine.** The switch at the next note is smooth enough: no crossfade needed.
+- **2026-11-09: step 3 done. Cycle sounds & scales is finished.** `?fast` removed. 104 unit tests and all 17 audio checks pass. README updated (Controls table, tests, layout).

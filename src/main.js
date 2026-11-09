@@ -1,6 +1,6 @@
 // Shell: wires the UI to the composer (music.js), the timing (scheduler.js) and the
 // performer (audio.js).
-import { DEFAULT_SETTINGS, SOUNDS, TONE_MIN, TONE_MAX, KEY_CYCLE_MIN, KEY_CYCLE_MAX } from './settings.js';
+import { DEFAULT_SETTINGS, SOUNDS, TONE_MIN, TONE_MAX, KEY_CYCLE_MIN, KEY_CYCLE_MAX, SOUND_CYCLE_SECONDS, nextInSoundCycle } from './settings.js';
 import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX, beatInterval, createComposer, dronePitch, nextKeyInCircle } from './music.js';
 import { playWithHarmony, createBus, startDrone } from './audio.js';
 import { createTransport, createKeyCycle } from './scheduler.js';
@@ -14,6 +14,13 @@ const loadSamplesFor = id => {
   if (set) loadSampleSet(set).catch(err => console.warn(err.message));
 };
 
+// Load the current sound, and while cycling, the one after it too, so it's ready
+// when its turn comes (the next turn is at least 2 minutes away).
+function loadSounds() {
+  loadSamplesFor(settings.sound);
+  if (settings.autoSound) loadSamplesFor(nextInSoundCycle({ ...settings, changes: 0 }).sound);
+}
+
 const TICK_MS = 50; // how often the timer loop books notes
 
 // The one settings object: controls write to it, the engine reads it before each note.
@@ -21,6 +28,8 @@ const settings = { ...DEFAULT_SETTINGS };
 
 const transport = createTransport();
 const keyCycle = createKeyCycle();
+const soundCycle = createKeyCycle(); // a plain countdown, reused for the sound cycle
+let soundChanges = 0; // sound changes since the scale last moved
 let ctx = null;
 let bus = null; // the current run's output; a stopped run's bus fades out on its own
 let timer = null;
@@ -37,6 +46,14 @@ function tick() {
   if (settings.autoKey && keyCycle.due(ctx.currentTime, settings.keyCycleSeconds)) {
     settings.key = nextKeyInCircle(settings.key);
     keySelect.value = settings.key; // applies from the next note, like a manual change
+  }
+  if (settings.autoSound && soundCycle.due(ctx.currentTime, SOUND_CYCLE_SECONDS)) {
+    const next = nextInSoundCycle({ ...settings, changes: soundChanges });
+    settings.sound = next.sound;
+    settings.scale = next.scale;
+    soundChanges = next.changes;
+    showSoundAndScale();
+    loadSounds();
   }
   for (const time of transport.due(ctx.currentTime, () => lastBeats * beatInterval(settings.tempo))) {
     updateDrone(time);
@@ -67,6 +84,7 @@ async function start() {
   drone = null;
   droneMidi = null;
   keyCycle.reset(ctx.currentTime);
+  restartSoundCycle();
   clearInterval(timer);
   timer = setInterval(tick, TICK_MS);
   tick();
@@ -104,6 +122,7 @@ const tempoSlider = document.getElementById('tempo');
 const tempoValue = document.getElementById('tempo-value');
 const droneToggle = document.getElementById('drone');
 const autoKeyToggle = document.getElementById('auto-key');
+const autoSoundToggle = document.getElementById('auto-sound');
 const keyCycleSlider = document.getElementById('key-cycle');
 const keyCycleValue = document.getElementById('key-cycle-value');
 const droneVolumeSlider = document.getElementById('drone-volume');
@@ -134,18 +153,23 @@ tempoSlider.min = TEMPO_MIN;
 tempoSlider.max = TEMPO_MAX;
 
 // Show the settings object in the controls (at page load, and after loading a preset).
+function showSoundAndScale() {
+  scaleSelect.value = settings.scale;
+  soundGroup.querySelector(`input[value="${settings.sound}"]`).checked = true;
+}
+
 function showSettings() {
   keySelect.value = settings.key;
-  scaleSelect.value = settings.scale;
   tempoSlider.value = settings.tempo;
   tempoValue.textContent = `${settings.tempo} BPM`;
   droneToggle.checked = settings.drone;
   autoKeyToggle.checked = settings.autoKey;
+  autoSoundToggle.checked = settings.autoSound;
   keyCycleSlider.value = settings.keyCycleSeconds;
   keyCycleValue.textContent = `every ${settings.keyCycleSeconds} s`;
   droneVolumeSlider.value = settings.droneVolume;
-  soundGroup.querySelector(`input[value="${settings.sound}"]`).checked = true;
-  loadSamplesFor(settings.sound);
+  showSoundAndScale();
+  loadSounds();
   toneSlider.value = settings.tone;
   harmonySlider.value = settings.harmony;
   varietySlider.value = settings.variety;
@@ -156,6 +180,14 @@ function showSettings() {
 // Restart the 30-second key countdown (on a manual key change, switching cycling on,
 // or loading a preset). Before the first Start there's no clock yet; Start resets it.
 const restartKeyCycle = () => { if (ctx) keyCycle.reset(ctx.currentTime); };
+
+// Start a fresh round of sounds (on Start, switching cycling on, or loading a preset).
+// Picking a sound by hand only restarts the 2-minute countdown and keeps the count.
+const restartSoundClock = () => { if (ctx) soundCycle.reset(ctx.currentTime); };
+function restartSoundCycle() {
+  soundChanges = 0;
+  restartSoundClock();
+}
 
 keySelect.addEventListener('change', () => {
   settings.key = keySelect.value;
@@ -170,6 +202,11 @@ keyCycleSlider.addEventListener('input', () => {
   settings.keyCycleSeconds = Number(keyCycleSlider.value);
   keyCycleValue.textContent = `every ${settings.keyCycleSeconds} s`;
 });
+autoSoundToggle.addEventListener('change', () => {
+  settings.autoSound = autoSoundToggle.checked;
+  restartSoundCycle();
+  loadSounds();
+});
 scaleSelect.addEventListener('change', () => { settings.scale = scaleSelect.value; });
 tempoSlider.addEventListener('input', () => {
   settings.tempo = Number(tempoSlider.value);
@@ -181,7 +218,11 @@ droneVolumeSlider.addEventListener('input', () => {
   settings.droneVolume = Number(droneVolumeSlider.value);
   drone?.setVolume(settings.droneVolume, ctx.currentTime);
 });
-soundGroup.addEventListener('change', e => { settings.sound = e.target.value; loadSamplesFor(settings.sound); });
+soundGroup.addEventListener('change', e => {
+  settings.sound = e.target.value;
+  restartSoundClock();
+  loadSounds();
+});
 toneSlider.addEventListener('input', () => { settings.tone = Number(toneSlider.value); });
 harmonySlider.addEventListener('input', () => { settings.harmony = Number(harmonySlider.value); });
 varietySlider.addEventListener('input', () => { settings.variety = Number(varietySlider.value); });
@@ -222,6 +263,7 @@ function showPresets() {
       showSettings();
       drone?.setVolume(settings.droneVolume, ctx.currentTime);
       restartKeyCycle();
+      restartSoundCycle();
     });
     row.append(name, save, load);
     return row;

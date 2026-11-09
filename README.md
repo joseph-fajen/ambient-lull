@@ -24,6 +24,7 @@ All changes apply live, from the next note (drone volume applies immediately).
 | Tempo | 20–120 BPM: the length of a beat. A 1-beat note rings for about 8 s at 20 BPM, down to 2.5 s at 120 BPM. |
 | Rhythm | From Steady (one note per beat) to Varied. Varied notes last half a beat (always in pairs, so the melody lands back on the beat) up to 4 beats. Quick notes ring shorter and held notes longer. Default: in the middle, about half the notes 1 beat. |
 | Sound | 6 sounds, all volume-matched and even from low notes to high. Four are recordings of real instruments: **Piano** (grand piano, default), **Upright** (a soft piano: an upright, played softly), **Harp** (concert harp) and **Vibes** (vibraphone, soft mallets). Two are synthesized: **Kalimba** (thumb piano) and **Pad** (synth pad). All but Pad have a soft strike, then a natural fade; Pad swells in slowly. A recorded sound loads the first time it's picked (up to 2 MB), and plays as Kalimba until it has. Presets with a sound that's since been removed load the closest one kept. |
+| Cycle sounds | When on, moves to the next sound every 2 minutes while playing (Piano → Upright → Harp → Vibes → Kalimba → Pad → Piano …). After every 6 sound changes, the Scale moves to the next one too, on the same note. Each scale lasts 12 minutes, and the whole trip through all 7 scales takes 84 minutes before it repeats. A round starts from whatever sound and scale are picked: on Start, when switched on, or when a preset loads. Picking a sound by hand restarts its 2 minutes but keeps the count towards the next scale. The next recorded sound loads a turn ahead, so it never plays as Kalimba. Works alongside Cycle keys. Off by default. |
 | Tone | A low-pass filter from Dark to Bright, limited so even Bright never gets harsh. |
 | Width | Stereo, from Mono to Wide. Each melody note gets its own place left to right, and its harmony note sits on the opposite side. The drone stays in the middle. Even at Wide, no note is entirely in one ear. Default: gently wide, about halfway. |
 | Harmony | Now and then a second, quieter note sounds with the melody: a 3rd, 4th or 5th, always in the scale and inside the melody's range. Harmony notes always ring long, as long as a 4-beat note, whatever the melody's rhythm. The slider sets how often, from Never to Often (about every other note). Default: about 1 note in 6. |
@@ -47,7 +48,7 @@ Renders a 30-second clip of each sound to `clips/` (MP3 if ffmpeg is installed, 
 npm test
 ```
 
-These cover the pure logic: scales and keys, the melody walk (a sweep of every key × scale × 20 seeds, checking range, scale, step size and note length), harmony notes (in scale, in range and a 3rd, 4th or 5th away, for every note of every key × scale), stereo places (both sides, harmony opposite the melody), harmony drift (its curve, Never stays Never, the slider untouched), note lengths (allowed lengths, quick notes in pairs, back on the beat), tempo to note length, note timing and Start/Stop states with a fake clock, settings validation, and presets with fake and failing storage.
+These cover the pure logic: scales and keys, the melody walk (a sweep of every key × scale × 20 seeds, checking range, scale, step size and note length), harmony notes (in scale, in range and a 3rd, 4th or 5th away, for every note of every key × scale), stereo places (both sides, harmony opposite the melody), harmony drift (its curve, Never stays Never, the slider untouched), note lengths (allowed lengths, quick notes in pairs, back on the beat), tempo to note length, note timing and Start/Stop states with a fake clock, settings validation, the sound & scale cycle (order, the scale moving on every 6th change, every scale visited), and presets with fake and failing storage.
 
 **Audio checks** (Node 22+, and Chrome, Chromium or Edge):
 
@@ -75,8 +76,8 @@ The page renders sound offline (to numbers, not the speakers) and checks:
 ```
 src/
   music.js       composer (pure): keys, scales, circle of fifths, the melody walk, harmony notes, note lengths (rhythm), stereo places, harmony drift, drone pitch, tempo → note length
-  settings.js    the settings object (pure): defaults, sounds table, validation
-  scheduler.js   timing (pure): which notes are due in the lookahead window; Start/Stop states; key-cycle countdown
+  settings.js    the settings object (pure): defaults, sounds table, validation, the sound & scale cycle
+  scheduler.js   timing (pure): which notes are due in the lookahead window; Start/Stop states; the countdown used by Cycle keys and Cycle sounds
   samples.js     recorded sounds: which files, loading them, the nearest recorded note for each pitch
   audio.js       performer: a recipe for each sound, the note player (with its stereo place), harmony level, the drone, reverb, and each run's output chain
   presets.js     the 4 preset slots; storage is passed in
