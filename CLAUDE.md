@@ -4,7 +4,7 @@ Generative ambient music in the browser: plain HTML and JavaScript modules on th
 
 ## Where things stand
 
-- **Built:** v1 plus everything in `notes/build-plan.md` ("After v1"), and 6 sounds: 4 recorded (Piano, Upright, Harp, Vibes) and 2 synthesized (Kalimba, Pad). The other 10 synthesized sounds were removed on 2026-11-09. See `notes/brainstorm.md`, section 3.
+- **Built:** v1 plus everything in `notes/build-plan.md` ("After v1"), and 6 sounds: 4 recorded (Piano, Upright, Harp, Vibes) and 2 synthesized (Kalimba, Pad). The other 10 synthesized sounds were removed on 2026-11-09. See `notes/brainstorm.md`, section 3. Also **Cycle sounds** (2026-11-09): a new sound every 2 minutes and a new scale after all six. See section 6.
 - **Next and open:** `notes/brainstorm.md` holds the decisions and open questions: remove the Width control (fixed wide), narrow Tempo to 20–60 BPM, custom chord progressions alongside Cycle keys, then a more beautiful UI. Harmony changes and a mobile app are parked.
 - **Still to do:** the listening checks in `notes/build-plan.md`. Only the owner can do those.
 
@@ -28,7 +28,7 @@ Generative ambient music in the browser: plain HTML and JavaScript modules on th
 
 ## Running things in a cloud session
 
-- **Unit tests:** `npm test` (Node 18+). About 90 tests, under a second.
+- **Unit tests:** `npm test` (Node 18+). About 105 tests, under a second.
 - **Audio checks and clips** need Chrome. Here, Chromium is at `/opt/pw-browsers/chromium-*/chrome-linux*/chrome`, and as root it only starts with `--no-sandbox`, so point `CHROME` at a small wrapper script:
 
   ```sh
