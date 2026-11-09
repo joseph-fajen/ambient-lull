@@ -95,7 +95,8 @@ Picked to spread across the things a listener hears first: how a note starts, wh
 - At the app's defaults (with reverb), Pad, Strings and Choir come out 1.4–1.6 dB louder than Warm. That's within the 2 dB matching tolerance, so it's left as is.
 
 - **2026-11-09: recorded samples.** Idea: the synthesized sounds the owner likes best (Kalimba, Pad) are the ones synthesis does naturally; acoustic instruments are where synthesis falls short and recordings win. Prototype: **Piano**, from the Salamander Grand Piano (CC-BY 3.0, credited in `samples/CREDITS.md`). 13 MP3 notes, every 3 semitones, under 1 MB; each note plays the nearest one, retuned by at most 1.5 semitones. They load in the background; until then Piano plays as Warm. Mixed to mono, with the usual soft strike. Volume-matched, even within 2.1 dB, and a little quieter at bright Tone for peak headroom. No library needed.
-- **Open:** does the piano beat the synthesized sounds by ear? If so, which instruments next (harp, strings, vibraphone, felt piano)? Should sampled ones replace the weaker synthesized ones? Keep the recording's stereo, and a crisper strike?
+- **2026-11-09: the owner likes the piano** ("very nice"). Samples work for this app.
+- **Open:** which instruments next (harp, strings, vibraphone, felt piano)? Should sampled ones replace the weaker synthesized ones? Keep the recording's stereo, and a crisper strike?
 
 ### How to build it
 
