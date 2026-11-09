@@ -103,7 +103,7 @@ Picked to spread across the things a listener hears first: how a note starts, wh
 
 - **Settings:** presets store `waveform: "sine"` today. Either keep the field name for old presets, or rename it to `sound` and accept old values.
 - **UI note:** 12 sounds won't fit the current row of buttons. Group them (Classic / Struck / Sustained) when we get to the UI.
-- **Open:** do the 8 candidates cover what you want? Any to swap (for example organ, singing bowl, music box)?
+- **Decided (2026-11-06):** the 8 candidates, as listed. **Done:** all 8 are built, and the owner approved how they sound.
 
 ## 4. A more beautiful UI
 
