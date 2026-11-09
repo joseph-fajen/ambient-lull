@@ -251,7 +251,7 @@
     // Notes are booked up to LOOKAHEAD past Stop, as the real timer loop would.
     async function checkStop() {
       const stopAt = 6;
-      const settings = { key: 'C', scale: 'major-pentatonic', sound: 'sawtooth', tone: 1, tempo: 60, harmony: 1, variety: 1 };
+      const settings = { key: 'C', scale: 'major-pentatonic', sound: 'piano', tone: 1, tempo: 60, harmony: 1, variety: 1 };
       let fadeEnd;
       const buf = await render(stopAt + 12, ctx => {
         const bus = createBus(ctx);

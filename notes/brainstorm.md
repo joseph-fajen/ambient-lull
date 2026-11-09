@@ -100,7 +100,7 @@ Picked to spread across the things a listener hears first: how a note starts, wh
 
 - **2026-11-09: three more recorded sounds, for listening.** Searched for open licences. No openly licensed felt piano exists that we found (the free ones, like Spitfire LABS Soft Piano, Jon Meyer's Kawai Felt Piano or Pianobook packs, don't allow redistribution or state no licence). Built from VCSL (CC0): **Soft piano** (a Knight upright played softly, with a darker Tone and a gentler strike, as a felt-piano stand-in), **Concert harp**, and **Vibes** (vibraphone, soft mallets). Strings left out for now (owner's choice; they'd also need looping).
 - **Found while tuning:** a recording's loudness has to be measured the way it will be heard. Levelling each note by its plain loudness left the vibraphone 5.7 dB uneven (its lowest bar fades fastest) and the harp 3.2 dB (its A4 has a sharp pluck that the soft strike rounds off). Weighting by the note's own shape (strike rise, then fade, at the played speed) brought every recorded sound within 1.3 dB, and the piano from 2.1 to 0.3 dB.
-- **Open:** which recorded sounds to keep, and whether Concert harp replaces the synthesized Harp. 16 sounds is a lot for the picker.
+- **Decided (2026-11-09): six sounds.** Keep Piano, Upright (was "Soft piano"; shorter for the picker), Harp (the recorded concert harp, which takes the name), Vibes, Kalimba and Pad. Removed: Soft, Warm, Hollow, Bright, Glass, Tine, the synthesized Harp, Strings, Choir and Breath. Old presets load the closest kept sound (waveforms, Strings, Choir, Breath → Pad; Glass, Tine → Vibes). Default is now Piano (was Warm); recorded sounds play as Kalimba until loaded. The picker is 3 across.
 
 ### How to build it
 

@@ -12,9 +12,9 @@ test('defaults are valid and point at real table entries', () => {
   assert.equal(DEFAULT_SETTINGS.drone, true);
 });
 
-test('sounds table: the four classic waveforms first, each with a name and detail', () => {
-  assert.deepEqual(SOUNDS.slice(0, 4).map(w => [w.name, w.detail, w.id]),
-    [['Soft', 'sine', 'sine'], ['Warm', 'triangle', 'triangle'], ['Hollow', 'square', 'square'], ['Bright', 'sawtooth', 'sawtooth']]);
+test('sounds table: six sounds, Piano first, each with a name and detail', () => {
+  assert.deepEqual(SOUNDS.map(w => w.id), ['piano', 'upright', 'harp', 'vibraphone', 'kalimba', 'pad']);
+  assert.equal(DEFAULT_SETTINGS.sound, 'piano');
   for (const w of SOUNDS) assert.ok(w.name && w.detail && w.group, w.id);
   assert.equal(new Set(SOUNDS.map(w => w.id)).size, SOUNDS.length, 'ids are unique');
 });
@@ -24,14 +24,24 @@ test('every sound has a recipe in the performer, and every recipe a sound', () =
 });
 
 test('presets from before sounds (saved as `waveform`) load their sound', () => {
-  assert.equal(normalizeSettings({ waveform: 'sine' }).sound, 'sine');
+  assert.equal(normalizeSettings({ waveform: 'kalimba' }).sound, 'kalimba');
   assert.equal(normalizeSettings({ waveform: 'noise' }).sound, DEFAULT_SETTINGS.sound);
-  assert.equal(normalizeSettings({ sound: 'square', waveform: 'sine' }).sound, 'square');
+  assert.equal(normalizeSettings({ sound: 'pad', waveform: 'kalimba' }).sound, 'pad');
   assert.ok(!('waveform' in normalizeSettings({ waveform: 'sine' })), 'the old name is dropped');
 });
 
+test('presets with a removed sound load the closest one kept', () => {
+  for (const id of ['sine', 'triangle', 'square', 'sawtooth', 'strings', 'choir', 'breath']) {
+    assert.equal(normalizeSettings({ sound: id }).sound, 'pad', id);
+  }
+  assert.equal(normalizeSettings({ sound: 'glass' }).sound, 'vibraphone');
+  assert.equal(normalizeSettings({ sound: 'tine' }).sound, 'vibraphone');
+  assert.equal(normalizeSettings({ waveform: 'sine' }).sound, 'pad');
+  assert.equal(normalizeSettings({ sound: 'harp' }).sound, 'harp', 'the old synthesized harp loads as the recorded one');
+});
+
 test('a complete valid object comes back unchanged', () => {
-  const s = { key: 'F#', scale: 'dorian', sound: 'sawtooth', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true, keyCycleSeconds: 45, harmony: 0.8, variety: 0.1, width: 0.2, drift: true };
+  const s = { key: 'F#', scale: 'dorian', sound: 'kalimba', tone: 0.25, tempo: 90, drone: false, droneVolume: 0.3, autoKey: true, keyCycleSeconds: 45, harmony: 0.8, variety: 0.1, width: 0.2, drift: true };
   assert.deepEqual(normalizeSettings(s), s);
 });
 
@@ -107,8 +117,8 @@ test('harmony runs 0 to 1, default 0.33, clamped', () => {
 
 test('an old preset without harmony loads with the default', () => {
   const old = { key: 'G', scale: 'dorian', waveform: 'sine', tone: 0.2, tempo: 30, drone: true, droneVolume: 0.5, autoKey: false, keyCycleSeconds: 30 };
-  const { waveform, ...rest } = old;
-  assert.deepEqual(normalizeSettings(old), { ...rest, sound: waveform, harmony: 0.33, variety: 0.5, width: 0.5, drift: false });
+  const { waveform, ...rest } = old; // sine was removed: the closest kept is Pad
+  assert.deepEqual(normalizeSettings(old), { ...rest, sound: 'pad', harmony: 0.33, variety: 0.5, width: 0.5, drift: false });
 });
 
 test('variety runs 0 to 1, default 0.5, clamped', () => {

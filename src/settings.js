@@ -3,28 +3,26 @@
 import { KEYS, SCALES, TEMPO_MIN, TEMPO_MAX } from './music.js';
 
 // The sounds. `id` is saved in presets; `name` is the big label and `detail` the small
-// one under it. `group` sorts them in the picker. `samples` names a set of recordings
-// (src/samples.js) that the sound needs loaded. The performer (src/audio.js) has a
-// recipe for each id. The first four are the built-in Web Audio waveforms; their ids
-// are the waveform names, so presets from before this table still load.
+// one under it. `group` says how it plays: struck (a strike, then a natural fade) or
+// sustained (a slow swell). `samples` names a set of recordings (src/samples.js) that
+// the sound needs loaded. The performer (src/audio.js) has a recipe for each id.
 export const SOUNDS = [
-  { id: 'sine', name: 'Soft', detail: 'sine', group: 'classic' },
-  { id: 'triangle', name: 'Warm', detail: 'triangle', group: 'classic' },
-  { id: 'square', name: 'Hollow', detail: 'square', group: 'classic' },
-  { id: 'sawtooth', name: 'Bright', detail: 'sawtooth', group: 'classic' },
-  { id: 'glass', name: 'Glass', detail: 'bell', group: 'struck' },
-  { id: 'kalimba', name: 'Kalimba', detail: 'thumb piano', group: 'struck' },
-  { id: 'harp', name: 'Harp', detail: 'plucked string', group: 'struck' },
-  { id: 'tine', name: 'Tine', detail: 'electric piano', group: 'struck' },
   { id: 'piano', name: 'Piano', detail: 'grand piano', group: 'struck', samples: 'piano' },
-  { id: 'upright', name: 'Soft piano', detail: 'upright, played softly', group: 'struck', samples: 'upright' },
-  { id: 'harp-recorded', name: 'Concert harp', detail: 'recorded harp', group: 'struck', samples: 'harp' },
+  { id: 'upright', name: 'Upright', detail: 'soft piano', group: 'struck', samples: 'upright' },
+  { id: 'harp', name: 'Harp', detail: 'concert harp', group: 'struck', samples: 'harp' },
   { id: 'vibraphone', name: 'Vibes', detail: 'vibraphone', group: 'struck', samples: 'vibraphone' },
+  { id: 'kalimba', name: 'Kalimba', detail: 'thumb piano', group: 'struck' },
   { id: 'pad', name: 'Pad', detail: 'synth pad', group: 'sustained' },
-  { id: 'strings', name: 'Strings', detail: 'bowed', group: 'sustained' },
-  { id: 'choir', name: 'Choir', detail: '"ooh" voices', group: 'sustained' },
-  { id: 'breath', name: 'Breath', detail: 'flute', group: 'sustained' },
 ];
+
+// Sounds that were removed (2026-11-09), and the closest one kept, so old presets still
+// load with a similar sound. The four classic waveforms swelled in gently, like Pad.
+// (`harp` was a synthesized harp; the id now means the recorded one.)
+export const REPLACED_SOUNDS = {
+  sine: 'pad', triangle: 'pad', square: 'pad', sawtooth: 'pad',
+  glass: 'vibraphone', tine: 'vibraphone',
+  strings: 'pad', choir: 'pad', breath: 'pad',
+};
 
 // Tone runs from 0 (darkest) to 1 (brightest); the performer maps it to a filter.
 export const TONE_MIN = 0;
@@ -37,7 +35,7 @@ export const KEY_CYCLE_MAX = 120;
 export const DEFAULT_SETTINGS = Object.freeze({
   key: 'C',
   scale: 'major-pentatonic',
-  sound: 'triangle',
+  sound: 'piano',
   tone: 0.5,
   tempo: 40,
   drone: true,
@@ -62,7 +60,8 @@ export function normalizeSettings(input) {
   return {
     key: oneOf(KEYS, s.key, d.key),
     scale: oneOf(SCALES, s.scale, d.scale),
-    sound: oneOf(SOUNDS, s.sound ?? s.waveform, d.sound), // `waveform`: the name before sounds
+    // `waveform`: the name before sounds
+    sound: oneOf(SOUNDS, REPLACED_SOUNDS[s.sound ?? s.waveform] ?? s.sound ?? s.waveform, d.sound),
     tone: number(s.tone, TONE_MIN, TONE_MAX, d.tone),
     tempo: number(s.tempo, TEMPO_MIN, TEMPO_MAX, d.tempo),
     drone: typeof s.drone === 'boolean' ? s.drone : d.drone,
