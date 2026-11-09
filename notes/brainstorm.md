@@ -158,3 +158,7 @@ The options, cheapest first:
 - **2026-11-09: step 2 done (in the app, waiting to be heard).** A "Cycle sounds" checkbox under the sound picker ("…and scales"). While playing, the sound moves on every 2 minutes and the scale with every 6th change; the picker and Scale menu follow. The next recorded sound loads one turn ahead. Start, switching it on and loading a preset start a fresh round; picking a sound by hand restarts the 2 minutes and keeps the count. Checked in headless Chrome with `?fast` (10 s per sound): all six in order, the scale changed with the return to Piano, and a hand-picked sound got its full turn. Still temporary: `?fast` in `src/main.js`.
 - **2026-11-09: the owner listened and it works fine.** The switch at the next note is smooth enough: no crossfade needed.
 - **2026-11-09: step 3 done. Cycle sounds & scales is finished.** `?fast` removed. 104 unit tests and all 17 audio checks pass. README updated (Controls table, tests, layout).
+
+## 7. Follow-ups (minor)
+
+- **Open (found 2026-11-09): the melody range in the checks is one semitone off.** `notePool()` in `src/music.js` reaches MIDI 43–78 (G2 in the key of G up to F♯5 in the key of F♯), but `tests/audio-checks.html` (the evenness check, lines 79 and 340), its report text, and the comment above `SAMPLE_SETS` in `src/samples.js` say 42–77. So F♯5 is never checked for evenness. Fix: test 43–78 (or work it out from `notePool()` across all keys), update the comment, and re-run `npm run test:audio`. Every recorded set already has a note within 2 semitones of MIDI 78.
