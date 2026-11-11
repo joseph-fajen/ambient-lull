@@ -38,6 +38,10 @@ finding violates one of its rules, the finding must cite that rule by name, so t
 standard applies and not just that a reviewer disliked it. If the file does not exist, review against
 CLAUDE.md and the references alone.
 
+**Project conventions:** if `.claude/references/conventions.md` exists, read its `## review` section and follow
+it. When it defines routing buckets (who acts on each finding), give every issue a `route:` from them as well as
+its severity.
+
 After you have a good understanding, run these commands:
 
 ```bash
@@ -108,6 +112,7 @@ Save a new file to `.claude/code-reviews/[appropriate-name].md`
 
 ```
 severity: critical|high|medium|low
+route: [a bucket from conventions.md, if it defines them]
 file: path/to/file.py
 line: 42
 issue: [one-line description]

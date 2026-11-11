@@ -1,6 +1,6 @@
 # Conventions: how Ambient Lull ships work
 
-This is the one place the ship-step conventions live. `piv-commit`, `piv-create-pr` and `piv-review-pr` read it at run time, so the agent writes and reviews this project's way, not a generic default. The decisions behind it are in `notes/brainstorm.md`, section 8.
+This is the one place the ship-step conventions live. `piv-commit`, `piv-create-pr`, `piv-review-pr` and `piv-review-changes` read it at run time, so the agent writes and reviews this project's way, not a generic default. The decisions behind it are in `notes/brainstorm.md`, section 8.
 
 Each section has **mechanical** rules (a pattern could check them) and **judgment** rules (a reviewer has to weigh them). There are no automatic checks in this repo yet. If some are added, derive them from the mechanical rules here and update both together.
 
@@ -14,17 +14,19 @@ Each section has **mechanical** rules (a pattern could check them) and **judgmen
 
 **Mechanical (regex-checkable):**
 - The subject uses a tag, `feat|fix|docs|refactor|test|chore(area)?:`, then an imperative summary, 72 characters at most. Areas follow the project's parts: `sound`, `composer`, `scheduler`, `settings`, `presets`, `ui`, `samples`, `tests`, `brainstorm`, `ai-layer`. For example `docs(brainstorm): record the v2 workflow decisions`.
-- No AI credit anywhere in the message: no "Generated with", no "Co-Authored-By: Claude".
+- The body has a `What changed:` part, and an `AI layer changes:` part whenever `.claude/`, `CLAUDE.md` or `AGENTS.md` changed.
+- No AI credit anywhere in the message: no "Generated with", no "Co-Authored-By: Claude". `.claude/settings.json` also turns Claude Code's credit lines off, so this holds even if the rule is missed.
 
 **Judgment (rubric for the judge):** <!-- #commit-quality -->
 - The message describes THIS diff: what changed and why, not a generic summary. A reader who sees only the message should roughly predict which files changed.
 - The subject says what the change does, and the body (when present) says why it was needed.
-- The body has a `What changed:` part, and an `AI layer changes:` part whenever `.claude/`, `CLAUDE.md` or `AGENTS.md` changed. A fix to the AI layer learned during this work rides in the same commit, and its line says what went wrong that it now prevents.
+- A fix to the AI layer learned during this work rides in the same commit, and its `AI layer changes:` line says what went wrong that it now prevents.
 - Plain English, as in the rest of the project's notes and comments.
 
 ## pr
 
 **Mechanical (regex-checkable):**
+- The title follows the commit subject format: `tag(area): summary`.
 - The body has the sections `## Summary`, `## What changed` and `## Validation`.
 - No AI credit in the body.
 
@@ -36,7 +38,7 @@ Each section has **mechanical** rules (a pattern could check them) and **judgmen
 
 **Mechanical (regex-checkable):**
 - The report routes every item into one of: AGENT FIXES / HUMAN DECIDES / HUMAN READS / HUMAN TESTS / FYI.
-- Every item carries a `file:line` reference. The human buckets hold 3–5 items at most.
+- Every item carries a `file:line` reference. Each human bucket holds at most 5 items.
 
 **Judgment (rubric for the judge):** <!-- #review-routing -->
 - HUMAN READS points at the code that carries this project's promises for THIS diff, not a random sample of touched files:
