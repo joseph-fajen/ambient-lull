@@ -1,49 +1,47 @@
-# Conventions — how this project ships work
+# Conventions: how Ambient Lull ships work
 
-> **Edit this file to match YOUR way of working.** This is the one place your ship-step conventions live, and
-> **three layers enforce it from this single source:**
-> 1. **The skills read it at run time** — `piv-commit` and `piv-create-pr` follow the rules below, so the agent
->    writes your way instead of a generic default.
-> 2. **The regex asserts** in `evals/cases.yaml` are derived from the **mechanical** rules here — the cheap,
->    deterministic guard on form.
-> 3. **The judge rubrics** quote the **judgment** rules here — the substance grade.
->
-> When you change a convention, update the matching assert. The skills stay general and portable; what's
-> specific to this project lives here, travels with the repo, and is inherited by anyone who clones it.
->
-> Shipped defaults = the course's house style. Replace them with yours.
+This is the one place the ship-step conventions live. `piv-commit`, `piv-create-pr` and `piv-review-pr` read it at run time, so the agent writes and reviews this project's way, not a generic default. The decisions behind it are in `notes/brainstorm.md`, section 8.
+
+Each section has **mechanical** rules (a pattern could check them) and **judgment** rules (a reviewer has to weigh them). There are no automatic checks in this repo yet. If some are added, derive them from the mechanical rules here and update both together.
+
+## branch
+
+- Every change goes on its own branch and reaches `main` through a pull request, notes included. Nothing is pushed straight to `main`.
+- Branch names are short, lowercase and hyphenated, and say what the work is: `remove-width-control`, `fix-melody-range-check`.
+- The owner merges. The agent opens and reviews pull requests, but never merges them.
 
 ## commit
 
 **Mechanical (regex-checkable):**
-- Subject line uses a conventional tag: `feat|fix|docs|refactor|test|chore(scope)?:` — imperative, ≤72 chars.
-- No AI attribution anywhere in the message: no "Generated with", no "Co-Authored-By: Claude".
+- The subject uses a tag, `feat|fix|docs|refactor|test|chore(area)?:`, then an imperative summary, 72 characters at most. Areas follow the project's parts: `sound`, `composer`, `scheduler`, `settings`, `presets`, `ui`, `samples`, `tests`, `brainstorm`, `ai-layer`. For example `docs(brainstorm): record the v2 workflow decisions`.
+- No AI credit anywhere in the message: no "Generated with", no "Co-Authored-By: Claude".
 
 **Judgment (rubric for the judge):** <!-- #commit-quality -->
-- The message describes THIS diff — what changed and why — not a generic summary. A reader who sees only the
-  message should predict roughly which files changed and not be surprised by the body of the diff.
-- Subject says what the change does, body (when present) says why it was needed.
-- The body has a `What changed:` part, and an `AI layer changes:` part whenever `.claude/`, `CLAUDE.md` or
-  `AGENTS.md` changed. A layer fix learned during this work rides in the same commit, and its line says what
-  went wrong that it now prevents.
+- The message describes THIS diff: what changed and why, not a generic summary. A reader who sees only the message should roughly predict which files changed.
+- The subject says what the change does, and the body (when present) says why it was needed.
+- The body has a `What changed:` part, and an `AI layer changes:` part whenever `.claude/`, `CLAUDE.md` or `AGENTS.md` changed. A fix to the AI layer learned during this work rides in the same commit, and its line says what went wrong that it now prevents.
+- Plain English, as in the rest of the project's notes and comments.
 
 ## pr
 
 **Mechanical (regex-checkable):**
-- PR body contains the sections: `## Summary`, `## What changed`, `## Validation`.
-- No AI attribution in the body.
+- The body has the sections `## Summary`, `## What changed` and `## Validation`.
+- No AI credit in the body.
 
 **Judgment (rubric for the judge):** <!-- #pr-quality -->
-- The Summary explains WHY this change exists (the intent), not just what it touches.
-- Validation states what was actually run/verified — not aspirational.
+- The Summary explains WHY the change exists (the intent), not just what it touches.
+- Validation states what was actually run, not what should be. `npm test` always; `npm run test:audio` after any change to `src/audio.js`; and for any change to the sound, the listening clips sent and whether the owner has heard them yet.
 
 ## review
 
 **Mechanical (regex-checkable):**
 - The report routes every item into one of: AGENT FIXES / HUMAN DECIDES / HUMAN READS / HUMAN TESTS / FYI.
-- Every item carries a `file:line` reference. Human buckets hold 3–5 items max.
+- Every item carries a `file:line` reference. The human buckets hold 3–5 items at most.
 
 **Judgment (rubric for the judge):** <!-- #review-routing -->
-- HUMAN READS points at genuinely load-bearing code for THIS diff (auth, money, data integrity, public
-  contracts) — not a random sample of touched files.
-- Nothing auth- or security-adjacent sits in AGENT FIXES.
+- HUMAN READS points at the code that carries this project's promises for THIS diff, not a random sample of touched files:
+  - "It can't sound bad": gains, peaks, the master level and the reverb in `src/audio.js` and `src/samples.js`.
+  - The composer stays pure: no audio in `src/music.js` or `src/scheduler.js`.
+  - Old presets keep loading: `normalizeSettings` and `REPLACED_SOUNDS` in `src/settings.js`, and `src/presets.js`.
+- HUMAN TESTS holds anything that has to be heard: a change to the sound goes there with its listening clips, because only the owner can judge it by ear.
+- Nothing that changes a level, a peak or how old presets load sits in AGENT FIXES. Those need a measurement or the owner's decision.
