@@ -162,3 +162,16 @@ The options, cheapest first:
 ## 7. Follow-ups (minor)
 
 - **Open (found 2026-11-09): the melody range in the checks is one semitone off.** `notePool()` in `src/music.js` reaches MIDI 43–78 (G2 in the key of G up to F♯5 in the key of F♯), but `tests/audio-checks.html` (the evenness check, lines 79 and 340), its report text, and the comment above `SAMPLE_SETS` in `src/samples.js` say 42–77. So F♯5 is never checked for evenness. Fix: test 43–78 (or work it out from `notePool()` across all keys), update the comment, and re-run `npm run test:audio`. Every recorded set already has a note within 1 semitone of MIDI 78 (Piano F♯5; Harp G5; Upright and Vibes F5).
+
+## 8. Way of working (v2 agentic coding course)
+
+The project started as a baseline of how the owner worked before the course (tagged `baseline-v1`). The aim is to adopt the v2 course practices fully, with the course AI layer fitted to Ambient Lull on the `ai-layer` branch.
+
+- **Decided (2026-11-11):**
+  - **Every change goes through a pull request**, notes included: a branch, `piv-create-pr`, an agent review with `piv-review-pr`, then the owner merges. Nothing is pushed straight to `main` any more.
+  - **Commit messages use the v2 default:** a tagged subject (`feat`, `fix`, `docs`, `refactor`, `test` or `chore`, with an optional area, such as `docs(brainstorm): …`), imperative, 72 characters at most. The body has a `What changed:` part, and an `AI layer changes:` part whenever CLAUDE.md or `.claude/` changed.
+  - **No AI credit** in commits or pull requests: no "Co-Authored-By: Claude", no "Generated with Claude Code". A Claude Code setting turns it off.
+
+### Progress
+
+- **2026-11-11:** `baseline-v1` tagged. The course layer is committed as copied on `ai-layer`, and the parts written for the AI Tutor are removed. Next: fit `conventions.md`, CLAUDE.md and the settings to these decisions, then adapt `engineering.md`, `direction.md`, `piv-validate` and the `code-reviewer` agent.
