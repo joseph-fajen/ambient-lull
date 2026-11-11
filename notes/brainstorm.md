@@ -171,6 +171,8 @@ The project started as a baseline of how the owner worked before the course (tag
   - **Every change goes through a pull request**, notes included: a branch, `piv-create-pr`, an agent review with `piv-review-pr`, then the owner merges. Nothing is pushed straight to `main` any more.
   - **Commit messages use the v2 default:** a tagged subject (`feat`, `fix`, `docs`, `refactor`, `test` or `chore`, with an optional area, such as `docs(brainstorm): …`), imperative, 72 characters at most. The body has a `What changed:` part, and an `AI layer changes:` part whenever CLAUDE.md or `.claude/` changed.
   - **No AI credit** in commits or pull requests: no "Co-Authored-By: Claude", no "Generated with Claude Code". A Claude Code setting turns it off.
+  - **The pull-request rule is enforced, not just written.** It lives in CLAUDE.md only, so it can't drift between two files. A GitHub ruleset on `main` requires a pull request, with 0 approvals because the owner works alone and GitHub won't let anyone approve their own PR. It refuses direct pushes from anyone: the owner, the agent, Archon or a script. `.claude/settings.json` also blocks the agent from running `gh pr merge`, because GitHub can't tell the agent's merge from the owner's.
+- **Open (2026-11-11): fit the Archon workflows when the course reaches Archon.** The three in `.archon/workflows/` already use branches and pull requests, but they hard-code commit messages (such as `feat: lane 1 — …`) without the area or the body parts, and read only CLAUDE.md, not `conventions.md`. Probably covered by the no-credit setting, since they run Claude in the repo; not yet confirmed. The ruleset protects `main` from them meanwhile.
 
 ### Progress
 

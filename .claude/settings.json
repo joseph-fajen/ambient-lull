@@ -2,5 +2,11 @@
   "attribution": {
     "commit": "",
     "pr": ""
+  },
+  "permissions": {
+    "deny": [
+      "Bash(gh pr merge:*)",
+      "Bash(git push origin main:*)"
+    ]
   }
 }

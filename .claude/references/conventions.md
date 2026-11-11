@@ -6,9 +6,8 @@ Each section has **mechanical** rules (a pattern could check them) and **judgmen
 
 ## branch
 
-- Every change goes on its own branch and reaches `main` through a pull request, notes included. Nothing is pushed straight to `main`.
+- The rule itself (every change through a pull request, only the owner merges) is in CLAUDE.md, under Git workflow.
 - Branch names are short, lowercase and hyphenated, and say what the work is: `remove-width-control`, `fix-melody-range-check`.
-- The owner merges. The agent opens and reviews pull requests, but never merges them.
 
 ## commit
 
