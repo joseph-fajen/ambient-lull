@@ -7,6 +7,7 @@
   "scripts": {
     "test": "node --test",
     "test:audio": "node tests/run-audio-checks.mjs",
-    "clips": "node tests/render-clips.mjs"
+    "clips": "node tests/render-clips.mjs",
+    "clips:forest": "node tests/render-forest-clips.mjs"
   }
 }

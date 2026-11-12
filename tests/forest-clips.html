@@ -1,0 +1,143 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Ambient Lull: forest spike clips</title>
+<!-- SPIKE (throwaway, branch forest-spike). Renders the four ear-check clips of
+     docs/forest-of-sound.architecture.md offline and measures them. Used by
+     render-forest-clips.mjs (npm run clips:forest). -->
+<body>
+  <p id="status">Rendering…</p>
+  <script type="module">
+    import { createBus, startDrone, playWithHarmony } from '../src/audio.js';
+    import { DEFAULT_SETTINGS } from '../src/settings.js';
+    import { createComposer, createRandom, beatInterval, dronePitch } from '../src/music.js';
+    import { SAMPLE_SETS, loadSampleSet } from '../src/samples.js';
+    import { planForest, createTides, conductorChanges, stateAt, WIDTH_SETS } from '../src/forest/plan.js';
+    import { createForest, playForest } from '../src/forest/play.js';
+
+    await Promise.all(Object.keys(SAMPLE_SETS).map(name => loadSampleSet(name, '../')));
+
+    const params = new URLSearchParams(location.search);
+    const SECONDS = Number(params.get('seconds')) || 240;
+    const SEED = Number(params.get('seed')) || 7;
+    const FADE = 4;
+    const RATE = 44100;
+    const CYCLES = { keyEvery: 30, soundEvery: 48 }; // the same for every clip, so only the texture differs
+    const settings = { ...DEFAULT_SETTINGS };
+
+    // Channels 0-1: what you hear. Channels 2-3: the master before the limiter (forest only).
+    const context = () => {
+      const ctx = new OfflineAudioContext(4, SECONDS * RATE, RATE);
+      ctx.destination.channelInterpretation = 'discrete';
+      const merger = ctx.createChannelMerger(4);
+      merger.connect(ctx.destination);
+      const tap = (node, first) => {
+        const split = ctx.createChannelSplitter(2);
+        node.connect(split);
+        split.connect(merger, 0, first);
+        split.connect(merger, 1, first + 1);
+      };
+      return { ctx, tap };
+    };
+
+    const fadeOut = (param, level) => {
+      param.setValueAtTime(level, SECONDS - FADE);
+      param.linearRampToValueAtTime(0, SECONDS);
+    };
+
+    // A: today's app, defaults, both cycles on.
+    async function today() {
+      const { ctx, tap } = context();
+      const end = ctx.createGain();
+      fadeOut(end.gain, 1);
+      tap(end, 0);
+      tap(end, 2);
+      const bus = createBus(ctx, end);
+      const live = { ...settings };
+      const changes = conductorChanges(settings, SECONDS, CYCLES);
+      let drone = startDrone(ctx, bus.dryInput, 0.05, dronePitch(live.key), live.droneVolume);
+      const composer = createComposer(live, createRandom(SEED));
+      for (let t = 0.05; t < SECONDS - FADE;) {
+        const s = stateAt(settings, changes, t);
+        if (s.key !== live.key) { drone.release(t); drone = startDrone(ctx, bus.dryInput, t, dronePitch(s.key), live.droneVolume); }
+        Object.assign(live, s);
+        const note = composer.next(t);
+        playWithHarmony(ctx, bus.input, t, note, live);
+        t += note.beats * beatInterval(live.tempo);
+      }
+      return ctx.startRendering();
+    }
+
+    // B, C, D: the forest.
+    async function forest({ widths = WIDTH_SETS.depth, still = false, kinds = null } = {}) {
+      const { ctx, tap } = context();
+      const tides = createTides(createRandom(SEED ^ 0x77), still);
+      const f = createForest(ctx, { seconds: SECONDS, tides, widths, tone: settings.tone });
+      const end = ctx.createGain();
+      fadeOut(end.gain, 1);
+      f.out.connect(end);
+      tap(end, 0);
+      const preEnd = ctx.createGain();
+      fadeOut(preEnd.gain, 1);
+      f.pre.connect(preEnd);
+      tap(preEnd, 2);
+      const { events } = planForest(settings, SECONDS - FADE, SEED, CYCLES);
+      playForest(ctx, f, kinds ? events.filter(e => kinds.includes(e.kind)) : events, settings);
+      return ctx.startRendering();
+    }
+
+    const CLIPS = {
+      A: { name: 'A today', render: () => today() },
+      B: { name: 'B forest', render: () => forest() },
+      C: { name: 'C forest, wide', render: () => forest({ widths: WIDTH_SETS.wide }) },
+      D: { name: 'D forest, tides still', render: () => forest({ still: true }) },
+      // For balancing by measurement only (not sent as clips): one kind of voice at a time, tides still.
+      melody: { name: 'x melody', render: () => forest({ still: true, kinds: ['melody'] }) },
+      drone: { name: 'x drone', render: () => forest({ still: true, kinds: ['drone'] }) },
+      sustain: { name: 'x sustain', render: () => forest({ still: true, kinds: ['sustain'] }) },
+      wave: { name: 'x wave', render: () => forest({ still: true, kinds: ['wave'] }) },
+      swarm: { name: 'x swarm', render: () => forest({ still: true, kinds: ['swarm'] }) },
+    };
+
+    // Loudness: RMS over 3 s windows (every 0.5 s), both channels, away from the ends.
+    function measure(buf) {
+      const ch = [0, 1, 2, 3].map(i => buf.getChannelData(i));
+      const peakOf = (a, b) => { let p = 0; for (const d of [a, b]) for (let i = 0; i < d.length; i++) p = Math.max(p, Math.abs(d[i])); return p; };
+      const win = 3 * RATE, hop = RATE / 2;
+      let loud = -Infinity, quiet = Infinity;
+      for (let s = 3 * RATE; s + win < (SECONDS - FADE) * RATE; s += hop) {
+        let sum = 0;
+        for (const d of [ch[0], ch[1]]) for (let i = s; i < s + win; i++) sum += d[i] * d[i];
+        const db = 10 * Math.log10(sum / (2 * win));
+        loud = Math.max(loud, db); quiet = Math.min(quiet, db);
+      }
+      return { peak: peakOf(ch[0], ch[1]), peakBeforeLimiter: peakOf(ch[2], ch[3]), loudest3s: loud, quietest3s: quiet };
+    }
+
+    function wavBase64(buf) {
+      const n = buf.length, out = new DataView(new ArrayBuffer(44 + n * 4));
+      const text = (at, s) => [...s].forEach((c, i) => out.setUint8(at + i, c.charCodeAt(0)));
+      text(0, 'RIFF'); out.setUint32(4, 36 + n * 4, true); text(8, 'WAVEfmt ');
+      out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, 2, true);
+      out.setUint32(24, RATE, true); out.setUint32(28, RATE * 4, true); out.setUint16(32, 4, true);
+      out.setUint16(34, 16, true); text(36, 'data'); out.setUint32(40, n * 4, true);
+      const [l, r] = [buf.getChannelData(0), buf.getChannelData(1)];
+      for (let i = 0; i < n; i++) {
+        out.setInt16(44 + i * 4, Math.max(-1, Math.min(1, l[i])) * 32767, true);
+        out.setInt16(46 + i * 4, Math.max(-1, Math.min(1, r[i])) * 32767, true);
+      }
+      const bytes = new Uint8Array(out.buffer);
+      let s = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return btoa(s);
+    }
+
+    window.clipIds = ['A', 'B', 'C', 'D'];
+    window.allClipIds = Object.keys(CLIPS);
+    window.clip = async id => {
+      const buf = await CLIPS[id].render();
+      return { name: CLIPS[id].name, stats: measure(buf), wav: wavBase64(buf) };
+    };
+    document.body.dataset.ready = 'yes';
+    document.getElementById('status').textContent = 'Ready.';
+  </script>
+</body>
