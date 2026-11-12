@@ -1,102 +1,83 @@
 ---
 name: piv-review-pr
-description: Full pull-request review — fetch the PR, run the project's validation, review the diff with fresh eyes (dispatching the code-reviewer agent), categorize issues by severity, post the review to GitHub (approve / request-changes / comment), and save a report. The agentic gate that runs on an open PR before a human approves. Use after piv-create-pr.
-argument-hint: "<pr-number | pr-url | branch> [--approve | --request-changes]"
+description: Full pull-request review for Ambient Lull — fetch the PR, run `piv-validate`, dispatch the code-reviewer agent for a fresh-eyes review against engineering.md and conventions.md, save a report and post it on the PR as a comment. The agentic gate that runs on an open PR before the owner merges. Use after piv-create-pr, or when asked to "review PR 12", "review this PR" or `/piv-review-pr`.
+argument-hint: "<pr-number | pr-url | branch>"
 ---
 
-# Review PR: The Agentic Gate Before the Human
+# Review PR: the agentic gate before the owner
 
 **Input**: $ARGUMENTS
 
-The point of this skill is **fresh eyes**: it reviews the PR in a clean context — *not* the context that wrote
-the code — and can hand the deep analysis to the **`code-reviewer` agent**, which is the whole reason the review
-catches what the author's own context rationalizes away. It posts its verdict on the PR, then a **human** makes
-the final call.
+The point of this skill is **fresh eyes**: the `code-reviewer` agent reviews the PR in a clean context, not the
+one that wrote the code, so it catches what the author's context rationalizes away. The review is posted as a
+comment; the owner makes the final call and merges.
 
-## Phase 1 — Fetch the PR
+## Phase 1: fetch the PR
 
 Resolve the input to a PR number (a number, a URL, or a branch via
 `gh pr list --head <branch> --json number -q '.[0].number'`). Then:
 
 ```bash
-gh pr view {N} --json number,title,body,author,headRefName,baseRefName,state,additions,deletions,changedFiles,files
+gh pr view {N} --json number,title,body,headRefName,baseRefName,state,isDraft,files
 gh pr diff {N}
 gh pr checkout {N}
 ```
 
-State guard: `MERGED`/`CLOSED` → stop ("nothing to review"); `DRAFT` → review direction, don't approve/block.
+`MERGED` or `CLOSED`: stop, nothing to review. A draft: review the direction, and say it's a draft in the verdict.
 
-## Phase 2 — Load the context (so you review against the right bar)
+## Phase 2: load the bar
 
-- **`CLAUDE.md`** + any `.claude/references/` — the project's standards are the review rubric.
-- **Project conventions:** if `.claude/references/conventions.md` exists, read its `## review` section and follow
-  it — its rules win over the defaults below. When it defines routing buckets (who acts on each finding), route
-  every finding into one of them as well as giving its severity.
-- **`engineering.md`**, if the repository has one (`.claude/references/engineering.md` first, then the repo root):
-  the steering document that states what code is judged against. Findings that violate one of its rules cite the
-  rule by name. Absent, review against CLAUDE.md and the references alone.
-- **The implementation report** (if `piv-implement` wrote one — `.claude/reports/*{branch}*`) + its plan: read the
-  **documented deviations**. A documented deviation is an *intentional decision*, **not** an issue — only flag
-  *undocumented* divergences. (No report? Review normally and note its absence.)
-- The PR's own intent (title/body): what problem it claims to solve.
+Read these before reviewing. They are the rubric; don't restate them in the report, cite them.
 
-## Phase 3 — Run validation
+- `.claude/references/engineering.md`: what code is judged against. Findings cite its rules by name.
+- `.claude/references/conventions.md`, `## review`: the five routing buckets and their limits. For an AI-layer
+  or notes change, also `## commit` and `## pr`, to check the PR title and body.
+- `CLAUDE.md` and `.claude/references/direction.md`: the ground rules and the scope.
+- The PR title and body: the claims to check. Anchor on the original request, not the PR body.
 
-Run the project's real suite (the **`piv-validate`** skill, or the plan's validation commands) — tests, type-check,
-lint, build. Capture pass/fail + counts. A red suite is a finding in itself.
+## Phase 3: validate
 
-## Phase 4 — Review the diff (dispatch the code-reviewer agent)
+Run the **`piv-validate`** skill on the PR branch and keep its verdict, counts and whether the audio checks ran.
+A FAIL is a finding. Audio checks that were required (`src/audio.js` or `src/samples.js` changed) but didn't
+run are a finding too.
 
-Hand the deep pass to the **`code-reviewer` agent** (`.claude/agents/code-reviewer.md`) — it reviews against the
-project's standards and reports **high-confidence issues only**. Read every changed file *in full* (not just the
-diff) for context. Cover: correctness · type safety · pattern/standards compliance · security · performance ·
-tests present · maintainability.
+## Phase 4: review (dispatch the code-reviewer agent)
 
-**Categorize every issue by severity:**
+Dispatch the **`code-reviewer`** agent with the PR number and branch, the original request, and the Phase 3
+result (whether `npm test` and `npm run test:audio` ran, and how they came out). Its checklist, severities,
+buckets and output format are in `.claude/agents/code-reviewer.md`; use them as they are. The agent reads its
+severities from this table:
 
 | Severity | Meaning |
 |----------|---------|
-| **Critical** | Blocking — security, data loss, crashes |
-| **High** | Should fix before merge — type-safety holes, missing error handling, logic errors |
-| **Medium** | Pattern inconsistencies, missing edge cases, *undocumented* deviations |
-| **Low** | Suggestions, minor polish |
+| **Critical** | Blocks merge: too loud or a peak over the limit, old presets that fail to load, music that stops or throws |
+| **High** | Fix before merge: logic errors, a missing fallback, a gain guessed rather than measured, required audio checks not run |
+| **Medium** | A pattern gap, a missing edge case or test, an *undocumented* deviation |
+| **Low** | Polish and suggestions |
 
-Acknowledge what's done well, too — review is constructive, not just a defect list.
+Then check its findings against the changed files, read in full: drop any you can't confirm at the cited
+`file:line`, and say so in the report. Add the validation result as a finding if the agent didn't.
 
-## Phase 5 — Decide
+## Phase 5: save and post
 
-- **Approve** — no critical/high issues, validation passes, matches intent.
-- **Request changes** — high issues, or fixable validation failures, or undocumented pattern violations.
-- **Block** (request-changes, strongly) — critical security/data issues, or wrong fundamental approach.
-- Honor an explicit `--approve` / `--request-changes` flag, but never approve over an unresolved critical issue.
+Write the report to `.claude/code-reviews/pr-{N}-review.md` (git ignores it):
 
-## Phase 6 — Post to GitHub + save the report
+- The agent's buckets (AGENT FIXES, HUMAN DECIDES, HUMAN READS, HUMAN TESTS, FYI), each item with `file:line`.
+- A validation table: check, result, counts.
+- What's good, and the verdict: Ready, Needs changes or Not ready, with counts by severity and what couldn't be
+  checked (sound, by ear).
 
-Write the report to `.claude/code-reviews/pr-{N}-review.md` (summary · issues by severity with `file:line` + fix ·
-routing from `conventions.md`, if it defines one · validation table · what's good · recommendation). Then post it:
+Post it as a comment. GitHub refuses approve and request-changes on the owner's own PRs, so don't use them:
 
 ```bash
-# approve
-gh pr review {N} --approve --body-file .claude/code-reviews/pr-{N}-review.md
-# request changes
-gh pr review {N} --request-changes --body-file .claude/code-reviews/pr-{N}-review.md
-# or just comment (draft PRs / advisory)
 gh pr comment {N} --body-file .claude/code-reviews/pr-{N}-review.md
 ```
 
-## Output + hand off
+## Hand off
 
-Print: PR number/URL · issue counts by severity · validation results · the recommendation. Then hand off:
-**"Posted on the PR. A human now reviews the code + this review and merges."** If there are issues, the natural
-next step is **`piv-fix-review-findings`** on the report, then re-run validation.
-
-## Notes
-
-- **Fresh eyes is the whole point** — run this in a clean context (or let the `code-reviewer` agent be the clean
-  context). Don't review with the session that wrote the code; it rationalizes instead of scrutinizing.
-- This is the *agentic* gate; it does not replace the human — it gives the human a validated, triaged PR to
-  approve. Going deeper (multiple review agents, tuning the reviewer to your stack, the validation pyramid) is
-  the code-review-as-a-component material later in the course.
+Print the PR URL, the verdict, counts by severity and the validation result, then: **"Posted on the PR. The
+owner reviews it and merges."** If there are AGENT FIXES, the next step is **`piv-fix-review-findings`** on
+the report, with the owner's OK. Never merge.
 
 ## Running under an orchestrator
 
