@@ -31,7 +31,7 @@ have changed.
 ## Removed, and why
 
 The course pack shipped more hooks, written for its Python demo app. They were removed on 2026-11-12 (see
-`notes/brainstorm.md`, section 8):
+`docs/brainstorm.md`, section 8):
 
 - `pre_tool_use.py` guarded secrets and `rm -rf`. This repo has no secrets, and it blocked any command that
   mentions `process.env`, which the audio-check scripts use.

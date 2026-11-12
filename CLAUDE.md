@@ -6,9 +6,9 @@ Generative ambient music in the browser: press Start for an endless, gentle melo
 
 ## Where things stand
 
-- **Built:** v1 plus everything in `notes/build-plan.md` ("After v1"), and 6 sounds: 4 recorded (Piano, Upright, Harp, Vibes) and 2 synthesized (Kalimba, Pad). The other 10 synthesized sounds were removed on 2026-11-09. See `notes/brainstorm.md`, section 3. Also **Cycle sounds** (2026-11-09): a new sound every 2 minutes and a new scale after all six. See section 6.
-- **Next and open:** `notes/brainstorm.md` holds the decisions and open questions: remove the Width control (fixed wide), narrow Tempo to 20–60 BPM, custom chord progressions alongside Cycle keys, then a more beautiful UI. Harmony changes and a mobile app are parked.
-- **Still to do:** the listening checks in `notes/build-plan.md`. Only the owner can do those.
+- **Built:** v1 plus everything in `docs/build-plan.md` ("After v1"), and 6 sounds: 4 recorded (Piano, Upright, Harp, Vibes) and 2 synthesized (Kalimba, Pad). The other 10 synthesized sounds were removed on 2026-11-09. See `docs/brainstorm.md`, section 3. Also **Cycle sounds** (2026-11-09): a new sound every 2 minutes and a new scale after all six. See section 6.
+- **Next and open:** `docs/brainstorm.md` holds the decisions and open questions: remove the Width control (fixed wide), narrow Tempo to 20–60 BPM, custom chord progressions alongside Cycle keys, then a more beautiful UI. Harmony changes and a mobile app are parked.
+- **Still to do:** the listening checks in `docs/build-plan.md`. Only the owner can do those.
 
 ## Architecture map
 
@@ -27,7 +27,7 @@ tests/
   *.test.js           # unit tests for the pure modules (node --test)
   audio-checks.html   # offline audio measurements: volume match, clicks, peaks, loudness
   run-audio-checks.mjs, render-clips.mjs, browser.mjs   # run pages in headless Chrome
-notes/                # design-thinking.md (why), build-plan.md (milestones), brainstorm.md (decisions)
+docs/                 # design-thinking.md (why), build-plan.md (milestones), brainstorm.md (decisions), <epic>.prd.md (epics)
 ```
 
 ## Ground rules (conventions)
@@ -46,7 +46,7 @@ notes/                # design-thinking.md (why), build-plan.md (milestones), br
 
 - **The owner** is a senior technical writer who often works from their phone. Keep replies short and plain, and lead with the outcome.
 - **Pace:** work 2–3 steps at a time and check in. Don't run far ahead.
-- **Decisions:** record them in `notes/brainstorm.md` as you go, under **Decided**, **Open** and **Progress**.
+- **Decisions:** record them in `docs/brainstorm.md` as you go, under **Decided**, **Open** and **Progress**.
 - **Listening:** the owner can't hear audio from the cloud machine. Send listening clips (`npm run clips`, with the SendUserFile tool) for any change to the sound.
 
 ## Commands
@@ -70,7 +70,7 @@ CHROME=/tmp/chrome npm run clips -- --sounds triangle,harp
 
 ## On-demand context
 
-- Why the project is the way it is → `notes/design-thinking.md`. What's decided and open → `notes/brainstorm.md`.
+- Why the project is the way it is → `docs/design-thinking.md`. What's decided and open → `docs/brainstorm.md`.
 - Skills, subagents and references from the course AI layer → `.claude/skills/`, `.claude/agents/`, `.claude/references/`.
 - What code is judged against → `.claude/references/engineering.md`. What's in and out of scope → `.claude/references/direction.md`.
 

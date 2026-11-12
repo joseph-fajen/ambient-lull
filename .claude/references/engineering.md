@@ -13,7 +13,7 @@ holds the steps (how to add a sound, how to test); this file holds the judgment 
 - Entries can be checked against the code. A drifted entry is deleted, not annotated.
 - Facts that change (counts, paths, lists of sounds) don't belong here. Point at the source that owns them.
 - Every rule earned its place through a real problem or a decision. The story stays in git history and
-  `notes/`; this file keeps the rule.
+  `docs/`; this file keeps the rule.
 
 ## The objective function
 
