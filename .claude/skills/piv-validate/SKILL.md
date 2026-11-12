@@ -1,90 +1,73 @@
 ---
 name: piv-validate
-description: Runs this project's full validation suite — tests, type checks, and linting across every part of the stack — then reports overall health. Use before committing, before opening a PR, or after finishing a chunk of work to confirm zero regressions.
+description: Runs Ambient Lull's checks and reports one PASS/FAIL verdict. It always runs the unit tests (`npm test`), and runs the audio checks (`npm run test:audio`) when the branch changed `src/audio.js` or `src/samples.js`. Use before committing, before opening a PR, after finishing a chunk of work, or when asked to "validate", "run the checks", "check nothing broke" or `/piv-validate`.
 ---
 
 # Validate
 
-Run every check this project has and report a single PASS/FAIL verdict.
+Run the checks this project has and report one PASS/FAIL verdict. Keep going after a failure, so the report
+covers everything. Report only; fixing is a separate step.
 
-> ## ⚠️ Make this yours first
->
-> **This skill is a template. The command list below is a placeholder — replace it with the commands
-> *your* project actually uses.** That is the entire point of a custom checker: it is the one skill
-> that cannot be generic, because it wraps your stack's CLIs.
->
-> Find your real commands in `package.json` scripts, `pyproject.toml`, `Makefile`, `justfile`,
-> `docker-compose.yml`, your CI workflow, or the README — then delete these and paste yours in.
->
-> **Two things to get right, because they are the usual reason a checker silently lies:**
-> 1. **Working directory.** Many tools only discover their config from the current directory. If your
->    config lives in `backend/pyproject.toml`, the command is `cd backend && uv run pytest`, not
->    `uv run pytest` from the repo root.
-> 2. **Cross-platform.** Avoid POSIX-only idioms if anyone on the team is on Windows — `lsof`,
->    `python3`, and background-then-`kill` are the common offenders.
+There is no type checker, linter or build step, and none should be added (`direction.md §no-build-step`).
 
-Run the checks in order. Keep going after a failure so the report covers everything, and capture the
-output of any command that fails.
-
-## 1. Tests
+## 1. Unit tests (always)
 
 ```bash
-# REPLACE: your test command, run from the right directory
-<your test command>
+npm test
 ```
 
-**Expected:** all tests pass.
+Read the summary lines (`ℹ tests`, `ℹ pass`, `ℹ fail`). For each failure, note the test name (the `✖` line) and
+its error.
 
-## 2. Type check
+## 2. Decide whether the audio checks are needed
+
+CLAUDE.md (Testing) requires them after any change to `src/audio.js` or `src/samples.js`.
+
+1. Find the base branch: the open PR's base if there is one, otherwise `main`.
+   ```bash
+   gh pr view --json baseRefName -q .baseRefName 2>/dev/null || echo main
+   ```
+2. List every changed file since the base: committed, uncommitted and untracked.
+   ```bash
+   BASE=$(git merge-base HEAD <base>)
+   { git diff --name-only "$BASE"; git ls-files --others --exclude-standard; } | sort -u
+   ```
+   `git diff` against a commit includes changes not yet committed. If `<base>` isn't known locally, try
+   `origin/<base>`.
+3. If neither `src/audio.js` nor `src/samples.js` is in the list, skip step 3 and report:
+   "skipped: no change to src/audio.js or src/samples.js since `<base>`."
+
+## 3. Audio checks (only when needed)
+
+Before starting, make sure they can run:
+
+- **Node 22 or newer** (`node --version`). If older: "required but not run: needs Node 22+, found vX."
+- **A browser:** `$CHROME` if set, otherwise one of the paths in `BROWSERS` in `tests/browser.mjs`. If none
+  exists: "required but not run: no Chrome found; set CHROME=/path/to/browser." In a cloud session, use the
+  wrapper in CLAUDE.md (Commands).
+
+If both are there, say the checks take about 5–7 minutes, then run them with a 10-minute timeout:
 
 ```bash
-# REPLACE: e.g. mypy, tsc --noEmit, go vet
-<your type-check command>
+npm run test:audio
 ```
 
-**Expected:** no type errors.
+The last line gives the count ("All N checks passed." or "N check(s) failed."). For each failure, note its
+`FAIL` line.
 
-## 3. Lint / format check
+**Required but not run counts as a FAIL.** A skipped check means not ready (`engineering.md`, Review posture).
 
-```bash
-# REPLACE: e.g. ruff check, biome check, eslint
-<your lint command>
+## 4. Report
+
+One line per check, then the verdict:
+
+```
+✅ Unit tests: 104 passed, 0 failed
+⏭️ Audio checks: skipped, no change to src/audio.js or src/samples.js since main
+Overall: PASS
 ```
 
-**Expected:** clean.
-
-## 4. Repeat per surface
-
-A full-stack project has more than one of each. Add a section per surface — backend tests, backend
-types, backend lint, frontend tests, frontend types, frontend lint — so a single command covers the
-whole repo.
-
-## 5. Optional — live smoke test
-
-Only when the change touches routing, middleware, or startup; skip it when your test suite already
-exercises the app in-process.
-
-```bash
-# REPLACE: start your app, hit one endpoint, confirm the status code, stop it
-<your run command>
-```
-
-Prefer starting the server in a second shell over backgrounding and killing it from inside this
-skill — the background-and-kill idiom is not portable.
-
-## 6. Summary report
-
-Report each check with a ✅ or ❌, then an overall verdict:
-
-- One line per check
-- **Overall: PASS or FAIL**
-
-For every ❌, include the failing command and the relevant output. Do not fix anything here —
-this skill reports; fixing is a separate step.
-
-## Notes
-
-- Keep this skill fast. It runs before every commit; if a step gets slow, that is a signal to fix the
-  slow step, not to drop it from the checker.
-- A checker that cannot fail is worthless. Once your commands are wired in, break something on
-  purpose and confirm this skill reports ❌.
+- ✅ passed, ❌ failed or required but not run, ⏭️ skipped because not needed.
+- Under each ❌: the command, the failing test or check names, and the relevant output (or why it couldn't run
+  and how to fix that).
+- **Overall: PASS** only if every line is ✅ or ⏭️.
