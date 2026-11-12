@@ -11,9 +11,7 @@ this file keeps only the stance.
 
 - **§endless-gentle-music** Press Start for endless, gentle music, until Stop. Subtlety is the key: it never
   demands attention and is pleasant as a background, but a listener who chooses to listen closely hears
-  something ever-varying, interesting and soothing, never flat. Not a piece to compose. For now two versions
-  sit side by side: today's melody over a soft drone, and the forest (`docs/forest-of-sound.prd.md`), a
-  hinted, shimmering melody in layers near and far.
+  something ever-varying, interesting and soothing, never flat. Not a piece to compose.
 - **§it-cant-sound-bad** Notes never clash: scales, harmony and key changes are chosen so no combination of
   settings gives clashing intervals, and the defaults sound good on the first Start. A feature that can
   bring a clash is out until it can't.
