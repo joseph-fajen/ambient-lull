@@ -53,8 +53,8 @@ Then read each changed file in full, not only the diff. Read the nearest tests t
 ## Rules you must keep
 
 - You cannot hear. Any change to the sound goes to HUMAN TESTS for the owner's listening. Never say a sound change is fine.
-- If `src/audio.js` or `src/samples.js` changed and the caller did not say `npm run test:audio` ran, that is a finding (High).
-- Nothing that changes a level, a peak or how old presets load goes in AGENT FIXES. Those need a measurement or the owner's decision.
+- If `src/audio.js` or `src/samples.js` changed and the caller did not say `npm run test:audio` ran, that is its own finding: `[High]` in HUMAN TESTS, separate from any other finding.
+- Nothing that touches a level, a peak or how old presets load goes in AGENT FIXES, even when the fix is a plain revert. Put it in HUMAN DECIDES. Those need a measurement or the owner's decision.
 - Report high-confidence findings only. If you could not tell, say "could not tell" and route it to a human bucket.
 
 ## Output format
@@ -67,6 +67,7 @@ Route every finding into exactly one bucket. Each human bucket holds at most 5 i
 
 ```
 ### AGENT FIXES
+Only fixes that don't touch a level, a peak or how old presets load. Those go to HUMAN DECIDES, even a plain revert.
 - [High] src/file.js:42 - what is wrong. Rule: <name>. Fix: <fix>.
 
 ### HUMAN DECIDES
@@ -76,7 +77,7 @@ Route every finding into exactly one bucket. Each human bucket holds at most 5 i
 - src/settings.js:76 - the code carrying a project promise for THIS diff, and why it matters.
 
 ### HUMAN TESTS
-- What to listen for or try, with the listening clips needed (`npm run clips`).
+- [Severity] what to run, listen for or try, with the listening clips needed (`npm run clips`).
 
 ### FYI
 - [Low] src/file.js:5 - worth knowing, no action needed.
