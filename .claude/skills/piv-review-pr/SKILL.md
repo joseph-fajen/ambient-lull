@@ -29,6 +29,9 @@ State guard: `MERGED`/`CLOSED` → stop ("nothing to review"); `DRAFT` → revie
 ## Phase 2 — Load the context (so you review against the right bar)
 
 - **`CLAUDE.md`** + any `.claude/references/` — the project's standards are the review rubric.
+- **Project conventions:** if `.claude/references/conventions.md` exists, read its `## review` section and follow
+  it — its rules win over the defaults below. When it defines routing buckets (who acts on each finding), route
+  every finding into one of them as well as giving its severity.
 - **`engineering.md`**, if the repository has one (`.claude/references/engineering.md` first, then the repo root):
   the steering document that states what code is judged against. Findings that violate one of its rules cite the
   rule by name. Absent, review against CLAUDE.md and the references alone.
@@ -70,7 +73,7 @@ Acknowledge what's done well, too — review is constructive, not just a defect 
 ## Phase 6 — Post to GitHub + save the report
 
 Write the report to `.claude/code-reviews/pr-{N}-review.md` (summary · issues by severity with `file:line` + fix ·
-validation table · what's good · recommendation). Then post it:
+routing from `conventions.md`, if it defines one · validation table · what's good · recommendation). Then post it:
 
 ```bash
 # approve
