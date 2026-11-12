@@ -14,7 +14,7 @@
 set -uo pipefail
 
 TEST_COMMAND="npm test"   # the one line to change
-MAX_ATTEMPTS=3            # give up after this many blocks in one session
+MAX_ATTEMPTS=3            # this try lets the stop through, so 3 means it blocks twice
 
 INPUT=$(cat)
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0

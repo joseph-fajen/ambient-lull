@@ -7,7 +7,7 @@ The agent doesn't choose to run it. A rule in CLAUDE.md asks; a hook makes sure.
 
 | File | Event | What it does |
 |---|---|---|
-| `stop-gate.sh` | Stop | When the agent tries to finish with changed files, it runs `npm test`. If the tests fail, it blocks the stop and hands the failures back, so the agent has to fix them first. After 3 blocks in one session it lets the stop through and says the tests did not pass. |
+| `stop-gate.sh` | Stop | When the agent tries to finish with changed files, it runs `npm test`. If the tests fail, it blocks the stop and hands the failures back, so the agent has to fix them first. It blocks twice in one session, then lets the 3rd stop through and says the tests did not pass. |
 
 It's wired in `.claude/settings.json`. Its block counts are kept in `.claude/hooks/.gate-state/`, which git
 ignores.
