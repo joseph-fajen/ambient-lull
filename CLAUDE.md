@@ -7,7 +7,7 @@ Generative ambient music in the browser: press Start for an endless, gentle melo
 ## Where things stand
 
 - **Built:** v1 plus everything in `docs/build-plan.md` ("After v1"), and 6 sounds: 4 recorded (Piano, Upright, Harp, Vibes) and 2 synthesized (Kalimba, Pad). The other 10 synthesized sounds were removed on 2026-11-09. See `docs/brainstorm.md`, section 3. Also **Cycle sounds** (2026-11-09): a new sound every 2 minutes and a new scale after all six. See section 6.
-- **Next and open:** `docs/brainstorm.md` holds the decisions and open questions: remove the Width control (fixed wide), narrow Tempo to 20–60 BPM, custom chord progressions alongside Cycle keys, then a more beautiful UI. Harmony changes and a mobile app are parked.
+- **Next and open:** the forest-of-sound epic (`docs/forest-of-sound.prd.md`): `plan-architecture`, then a spike. Decisions and open questions are in `docs/brainstorm.md`, section 9. Parked for now: narrowing Tempo, chord progressions and a new UI. Width is part of the forest work. Harmony changes and a mobile app are parked too.
 - **Still to do:** the listening checks in `docs/build-plan.md`. Only the owner can do those.
 
 ## Architecture map
