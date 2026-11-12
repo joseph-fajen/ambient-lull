@@ -1,130 +1,49 @@
 ---
 name: piv-review-changes
-description: Performs a technical code review of recently changed files for bugs, security issues, and standards compliance, then writes a report. Use before committing, as a pre-commit quality gate.
-# A reviewer needs to read, search, diff, and save its report — nothing more.
-# Declaring the grants here makes the skill the unit of automation: it carries
-# its own tool permissions wherever it runs (interactively, from a script, or
-# in CI, where a skill's allowed-tools are what Claude gets).
-allowed-tools: Read, Grep, Glob, Write, Bash(git *)
+description: Reviews Ambient Lull's uncommitted changes before a commit — runs `piv-validate`, dispatches the code-reviewer agent on the working-tree diff against engineering.md and conventions.md, and saves a routed report. Use before committing, as a pre-commit quality gate, or when asked to "review my changes", "review before I commit" or `/piv-review-changes`. For an open pull request, use piv-review-pr instead.
+# A reviewer reads, diffs, validates, dispatches the reviewer agent and saves its report — nothing more.
+allowed-tools: Read, Grep, Glob, Write, Agent, Skill, Bash(git *), Bash(npm *)
 ---
 
-# Code Review
+# Review changes: the pre-commit gate
 
-Perform technical code review on recently changed files.
+Review the uncommitted changes in the working tree the same way `piv-review-pr` reviews a PR, before they are
+committed.
 
-## Core Principles
+## 1. Load the bar
 
-Review Philosophy:
+Read `.claude/references/engineering.md`, `.claude/references/conventions.md` (`## review`), `CLAUDE.md` and
+`.claude/references/direction.md`. They are the rubric: cite them, don't restate them.
 
-- Simplicity is the ultimate sophistication - every line should justify its existence
-- Code is read far more often than it's written - optimize for readability
-- The best code is often the code you don't write
-- Elegance emerges from clarity of intent and economy of expression
-
-## What to Review
-
-Start by gathering codebase context to understand the codebase standards and patterns.
-
-Start by examining:
-
-- CLAUDE.md
-- README.md
-- Key files in the core module
-- Documented standards in the docs directory (and any `.claude/references/` docs)
-
-**Steering document:** if the repository has an `engineering.md` (look at `.claude/references/engineering.md`
-first, then the repo root), read it before reviewing. It is what this project's code is judged against. When a
-finding violates one of its rules, the finding must cite that rule by name, so the author knows which agreed
-standard applies and not just that a reviewer disliked it. If the file does not exist, review against
-CLAUDE.md and the references alone.
-
-**Project conventions:** if `.claude/references/conventions.md` exists, read its `## review` section and follow
-it. When it defines routing buckets (who acts on each finding), give every issue a `route:` from them as well as
-its severity.
-
-After you have a good understanding, run these commands:
+## 2. Gather the change
 
 ```bash
 git status
+git diff HEAD --stat
 git diff HEAD
-git diff --stat HEAD
-```
-
-Then check the list of new files:
-
-```bash
 git ls-files --others --exclude-standard
 ```
 
-Read each new file in its entirety. Read each changed file in its entirety (not just the diff) to understand full context.
+Nothing changed: stop and say so. Read each changed and new file in full, not only the diff.
 
-For each changed file or new file, analyze for:
+## 3. Validate
 
-1. **Logic Errors**
-   - Off-by-one errors
-   - Incorrect conditionals
-   - Missing error handling
-   - Race conditions
+Run the **`piv-validate`** skill and keep its verdict, counts and whether the audio checks ran. A FAIL, or
+audio checks that were required but didn't run, is a finding.
 
-2. **Security Issues**
-   - SQL injection vulnerabilities
-   - XSS vulnerabilities
-   - Insecure data handling
-   - Exposed secrets or API keys
+## 4. Review (dispatch the code-reviewer agent)
 
-3. **Performance Problems**
-   - N+1 queries
-   - Inefficient algorithms
-   - Memory leaks
-   - Unnecessary computations
+Dispatch the **`code-reviewer`** agent with the list of changed and new files, the diff, what the change is for,
+and the step 3 result. Its checklist, buckets and output format are in `.claude/agents/code-reviewer.md`, and
+severities are the table in `.claude/skills/piv-review-pr/SKILL.md`. Use them as they are.
 
-4. **Code Quality**
-   - Violations of DRY principle
-   - Overly complex functions
-   - Poor naming
-   - Missing type hints/annotations
+Check each finding at its `file:line` and drop any you can't confirm, saying so.
 
-5. **Adherence to Codebase Standards and Existing Patterns**
-   - Adherence to standards documented in the docs directory
-   - Linting, typing, and formatting standards
-   - Logging standards
-   - Testing standards
+## 5. Save the report
 
-## Verify Issues Are Real
+Write it to `.claude/code-reviews/changes-{branch}-{YYYY-MM-DD}.md` (git ignores it): the stats (files added,
+changed and deleted, lines added and removed), the agent's buckets, the validation result and the verdict.
+Clean: "Review passed. No findings."
 
-- Run specific tests for issues found
-- Confirm type errors are legitimate
-- Validate security concerns with context
-
-## Output Format
-
-Save a new file to `.claude/code-reviews/[appropriate-name].md`
-
-**Stats:**
-
-- Files Modified: 0
-- Files Added: 0
-- Files Deleted: 0
-- New lines: 0
-- Deleted lines: 0
-
-**For each issue found:**
-
-```
-severity: critical|high|medium|low
-route: [a bucket from conventions.md, if it defines them]
-file: path/to/file.py
-line: 42
-issue: [one-line description]
-detail: [explanation of why this is a problem]
-suggestion: [how to fix it]
-```
-
-If no issues found: "Code review passed. No technical issues detected."
-
-## Important
-
-- Be specific (line numbers, not vague complaints)
-- Focus on real bugs, not style
-- Suggest fixes, don't just complain
-- Flag security issues as CRITICAL
+Print the verdict and the report path. Don't fix anything without the owner's OK; the next step is
+**`piv-fix-review-findings`** on the report, or **`piv-commit`** if it passed.
