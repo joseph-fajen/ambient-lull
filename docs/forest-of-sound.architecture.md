@@ -12,7 +12,7 @@ The owner gets bored after about 5 minutes: the music is beautiful but flat, wit
 
 1. **More of today.** Add to today's one composer: a second melody line, more harmony, a stronger drift. Cheapest, but it's still one line through one space at one loudness, which is the problem the epic names.
 2. **Fixed loops of different lengths** (the *Music for Airports* method). Generate a few phrases and loop them at lengths that don't line up, so the mix never quite repeats. Cheap to run and easy to measure, but it's less alive, and key changes and rotating sounds don't fit fixed loops.
-3. **An ecosystem on parallel layers** (the shape proposed in brainstorm section 9). A conductor on the scale of minutes, layers near to far, and voices that enter, sing, fade and leave. Today's melody becomes the front voice, so nothing liked is lost.
+3. **An ecosystem on parallel layers** (the shape proposed in brainstorm section 9). A conductor on the scale of minutes, layers near to far, and voices that enter, sing, fade and leave. Today's melody becomes the front voice, softened into a hinted melody, so nothing liked is lost.
 
 **Recommended: 3.** It's the only one that answers all three complaints: depth, independent motion and dynamics. It costs the most, so the spike tests it before anything else is built.
 
@@ -24,7 +24,7 @@ The engine has three levels of time:
 
 - **Conductor (minutes).** The key, scale and sound cycles, as today, plus slow **tides**: smooth curves of time with periods that don't line up, such as 47 s, 73 s, 131 s and 4 min.
 - **Layers (near to far).** Each layer has its own pitch register, filter, width, reverb space and level.
-- **Voices (seconds).** Each voice has a lifetime and is one of four kinds: Melodist (today's note walk), Sustainer (long tones that glide), Swarm (one sound copied many times, each a little different) and Wave (filtered noise that swells and recedes).
+- **Voices (seconds).** Each voice has a lifetime and is one of four kinds: Melodist (today's note walk, played as a hinted melody: see below), Sustainer (long tones that glide), Swarm (one sound copied many times, each a little different) and Wave (filtered noise that swells and recedes).
 
 The split is the same as today's composer and performer. **Pure, tested modules decide what happens and when. The audio side only plays it.**
 
@@ -44,6 +44,7 @@ The split is the same as today's composer and performer. **Pure, tested modules 
 - **Tides.** Functions from time to a number between 0 and 1, with a seeded phase for each run. They only ever **scale down**: a loudness tide multiplies a layer's level by between about 0.3 and 1, and a brightness tide lowers a filter's cutoff from its base. So "never louder, never brighter" comes from how the tides are built, not just from a check afterwards.
 - **Conductor.** It reuses `nextKeyInCircle`, `nextInSoundCycle` and the countdowns from `src/scheduler.js`, and says which key, scale and sound apply at any moment.
 - **Layers.** Data only: register, filter base, width, which space, and base level.
+- **The hinted melody (2026-11-12, the owner's call).** The Melodist isn't one voice but a soft blend of **3 copies, each tuned very slightly differently**, so the melody shimmers and is hinted rather than explicit. The pure side gives each copy its own small detune, timing offset and place. The audio side plays the copies, with the blend set by measurement so it isn't louder than one of today's notes.
 - **Voice planners.** Given a time window, the conductor's state and a seeded random source, each planner returns timed **events**: a sustain with its pitch path, a swarm with its copies (detune, offset, pan), a wave with its swell shape. The Melodist is today's `createComposer`, unchanged.
 - **Population.** Decides when voices enter and leave, and holds the voice cap.
 
@@ -61,7 +62,7 @@ Because the tides and planners are pure and seeded, the offline clips and the li
 
 | Layer | Voices | Pitch (MIDI) | Space | Filter | Width |
 |---|---|---|---|---|---|
-| Near | Melodist (today's melody and harmony, cycling sounds) | 43–78, as today | short room, about 1.2 s, mostly dry | the Tone setting, as today | narrow, about 0.4 |
+| Near | Melodist: the hinted melody, 3 slightly detuned copies (with harmony and cycling sounds) | 43–78, as today | short room, about 1.2 s, mostly dry | the Tone setting, as today | narrow, about 0.4 |
 | Middle | Sustainer | 48–72 | medium space, about 3 s | darker, about 1.5 kHz | about 0.6 |
 | Far | Wave, low Sustainers, drone | 31–55, plus noise | long hall, about 7 s, mostly reverb | dark, about 800 Hz | wide, about 0.9 |
 | High (in Far's hall) | Swarm | 72–91 | shares Far's hall | gentle high cut | widest, 1.0 |
@@ -70,6 +71,7 @@ Because the tides and planners are pure and seeded, the offline clips and the li
 - **Reverb: three spaces**, one convolver per layer, with impulse responses generated as today but at different lengths. **Fallback** if a phone struggles: two spaces (room and hall), with the Middle layer sending to both.
 - **The drone keeps out of the reverb.** Today it skips the reverb because a reverb colours a single held pitch unevenly. It takes Far's filter and width, but not the hall.
 - **Recorded sounds stay in Near.** The sample sets cover about F2 to G5, so the new low and high registers are synthesized.
+- **Sound palette: a major open question** (see Open questions). Today's six sounds stay but are used more subtly, and many new sounds will be needed. The sounds named here are placeholders until the palette is chosen.
 - *Considered:* one Width control for all layers (adds a control to a Start/Stop page), one fixed width for everything (loses width as a depth cue), and one shared reverb with different sends (the owner already ruled that out).
 
 ### 4. Dynamics: never louder than today (decided)
@@ -87,7 +89,7 @@ Measure **both** the peak and the average, on long offline renders of both engin
 
 ### 5. Key, scale and sound cycles (decided)
 
-- **The conductor owns them, always on**, using today's pure functions: the circle of fifths, a new sound every 2 minutes and a new scale with every 6th sound change.
+- **The conductor owns them, always on** (with today's six sounds as placeholders until the new palette is chosen), using today's pure functions: the circle of fifths, a new sound every 2 minutes and a new scale with every 6th sound change.
 - **Every layer follows the key and scale.** The **sound cycle changes the Near melody only**. The other layers keep their own synthesized sounds.
 - **At a key change:** the drone crossfades as today. New voices use the new key. In the spike, voices that are still sounding just finish. Neighbouring keys on the circle share most of their notes, so that may be fine. If clashes are heard, those voices glide to the nearest note of the new key instead.
 - *Later experiment:* the melody passing between layers and instruments (the epic's "orchestral" question).
@@ -100,7 +102,7 @@ Measure **both** the peak and the average, on long offline renders of both engin
 
 ### Data model, boundaries, stack
 
-- **Stack:** plain JavaScript modules on the Web Audio API, as today. No libraries, no worklet. A true shimmer reverb would need an audio worklet, which `§no-build-step` allows, but it's deferred: detuned swarm copies come first.
+- **Stack:** plain JavaScript modules on the Web Audio API, as today. No libraries, no worklet. A true shimmer reverb would need an audio worklet, which `§no-build-step` allows, but it's deferred: the detuned copies of the hinted melody and the swarm come first.
 - **Data:** no stored data. The forest saves nothing, and presets and `localStorage` are unchanged. The only new data shapes are the layer table and the event objects the planners return.
 - **Boundaries:** no network, no server, no new samples.
 
@@ -108,6 +110,7 @@ Measure **both** the peak and the average, on long offline renders of both engin
 
 - An engine interface that today's shell and the forest shell can both drive.
 - A tide module, and a conductor that brings the cycles and the tides together.
+- A hinted-melody player: today's composer's notes played as 3 slightly detuned copies.
 - Voice planners for Sustainer, Swarm and Wave, and a population with a cap.
 - Layer buses with a filter, a width, their own reverb and a level. Impulse responses at three lengths.
 - New voice recipes: a gliding sustain, a swarm copy and a noise wave.
@@ -123,12 +126,14 @@ Measure **both** the peak and the average, on long offline renders of both engin
 Question:      Does an ecosystem of layers, voices and tides sound like the right direction:
                deeper, more alive, still calm, and never louder than today?
 Spike:         On a throwaway branch: pure tides (2), a conductor, the layer table, and
-               planners for Sustainer, Swarm and Wave under today's melody and drone,
+               planners for Sustainer, Swarm and Wave under the hinted melody (3 detuned
+               copies of today's melody) and today's drone, all with placeholder sounds,
                played through 3 layer buses with 3 reverbs. A forest clip page renders
                4-minute clips offline. No forest.html, no phone check, no new audio checks.
                Timebox: about 2 working sessions.
 Decision rule: go on to the real test if the owner hears depth and change in clip B and
                prefers it to clip A, it isn't busy, and the numbers show it's no louder.
+               The clips judge depth, motion and dynamics, not the sounds themselves.
                Rework the voices or the tides if it's busy or flat. Stop the epic if the
                direction itself is wrong (the epic's own stop point).
 ```
@@ -136,7 +141,8 @@ Decision rule: go on to the real test if the owner hears depth and change in cli
 **What it builds, and nothing more:**
 
 - **Two tides:** loudness, about 73 s, and brightness, about 131 s, so a 4-minute clip has a few rises and dips. The density and shimmer tides wait for the real test.
-- **Three kinds of new voice** (Sustainer, Swarm, Wave) plus today's melody as the Melodist, with the drone as today, on the layers in the table.
+- **Three kinds of new voice** (Sustainer, Swarm, Wave) plus the hinted melody as the Melodist, with the drone as today, on the layers in the table.
+- **Placeholder sounds (the owner's call):** today's six sounds, used subtly, for the hinted melody, and simple synthesized sounds for the sustain, the swarm and the wave. Choosing the real palette comes after, with its own clips.
 - **Cycles on:** a key change every 30 s (today's default) and a sound change every 2 minutes, so each clip has 8 key changes and 2 sound changes. A scale change takes 12 minutes, so it isn't heard in a clip.
 
 **The clips** (4 minutes each, same seed, sent as MP3s):
@@ -154,6 +160,7 @@ Each clip prints its worst peak and its loudest and quietest 3-second stretch ne
 
 ## Open questions
 
+- **The sound palette (major).** The new vision needs the sounds rethought. Today's six all have qualities worth keeping (the Pad especially) and can stay, used more subtly, but many new sounds will be needed. What the palette is, and how the hinted melody's 3 voices are chosen from it (copies of one sound, or a blend of different sounds), is its own piece of work after the spike, judged by clips.
 - **Key changes with voices still sounding:** do they clash? Settled by ear in clip B. If they do, those voices glide to the new key.
 - **The key-change pace in the forest:** today's 30 s may be too busy with long sustains. Settled by ear; a longer fixed pace is cheap to change.
 - **The size of the dip:** about 6–10 dB is a guess. Settled by ear in the spike, then made into a check.
