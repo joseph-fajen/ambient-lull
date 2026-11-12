@@ -20,8 +20,8 @@ this file keeps only the stance.
 - **§toy-not-a-settings-form** Turning a control changes the music right away, on the next note. Few
   controls, each earning its place; a good fixed value beats a slider. The forest page has only Start and
   Stop, because it drives itself.
-- **§a-few-chosen-sounds** A small set of distinct, curated sounds, recorded where recordings sound better
-  and synthesized where synthesis does. Sounds are judged by ear, and the weaker ones are removed.
+- **§a-curated-palette** A curated palette of distinct sounds, up to about 24, recorded where recordings
+  sound better and synthesized where synthesis does. Sounds are judged by ear, and the weaker ones are removed.
 - **§browser-on-desktop-and-phone** For now, one web page that plays in a desktop or phone browser. A mobile
   app is considered only after the refinements and the UI settle (§open-mobile-app).
 - **§no-build-step** Plain HTML and JavaScript modules on the Web Audio API, served as static files. No audio,
