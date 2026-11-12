@@ -10,6 +10,7 @@ Started 2026-11-06, after v1 and the "After v1" extras were built (see `build-pl
 
 ### Width: remove the control
 
+- **Decided (2026-11-12): moved into the forest work; see section 9.**
 - **Decided (direction):** always rich and wide; no Mono option.
 - **Open:** fixed at which width? Today's default is 0.5 (places within ±0.4); Wide is 1.0 (±0.8). Pick by ear on headphones, maybe somewhere between.
 - **Note:** the peak check already runs at full width, so any fixed value is covered. Old presets with a `width` value just ignore it.
@@ -28,12 +29,14 @@ Started 2026-11-06, after v1 and the "After v1" extras were built (see `build-pl
 
 ### Tempo: narrow to 20–60 BPM
 
+- **Decided (2026-11-12): parked for now; see section 9.**
 - **Decided (direction):** range 20–60 BPM. The default (40) stays inside.
 - **Catch:** note length is scaled across the tempo range (`noteLength()` in `src/music.js`). Just changing `TEMPO_MAX` to 60 would quietly shorten notes at 60 BPM from about 5 s to about 2.5 s. Keep the old curve (about 8 s at 20 BPM, about 5 s at 60) by fixing the curve's end points separately from the slider's range.
 - Old presets above 60 BPM get clamped to 60 (settings validation already does this).
 
 ## 2. Chord progressions
 
+- **Decided (2026-11-12): parked for now; see section 9.**
 - **Wanted:** enter a custom chord progression, used instead of (or alongside) Cycle keys. Keep Cycle keys.
 - **Insight:** these work at two levels. Cycle keys changes the *key* (home note). A progression moves between chords *within* a key. If the progression is written relative to the key, as scale degrees (I – vi – IV – V), not letter names (C – Am – F – G), then both work together: Cycle keys carries the whole progression into each new key.
 - **What a chord would change:**
@@ -115,6 +118,7 @@ Picked to spread across the things a listener hears first: how a note starts, wh
 
 ## 4. A more beautiful UI
 
+- **Decided (2026-11-12): parked for now; see section 9.**
 - Wait until the control set settles (sections 1–3), so we design for the final controls.
 - **Open:** look and feel references, and whether visuals (something moving with the music) are part of it.
 
@@ -221,8 +225,10 @@ The project started as a baseline of how the owner worked before the course (tag
   - **No nature recordings** for now: the sounds evoke nature without being field recordings.
   - **Not for sleep.** It's for the living room, listening closely or reading, often with others.
   - **Change Ambient Lull, not a new project** (the owner's call, after the PRD review). It changes `direction.md §endless-gentle-music` ("a calm backdrop that never needs attention") and puts pressure on `§it-cant-sound-bad`; updating `direction.md` is the owner's edit, in its own reviewed PR.
-  - **Other refinements parked (2026-11-12).** Removing the Width control (section 1), narrowing Tempo (section 1), custom chord progressions (section 2) and a more beautiful UI (section 4) wait until the forest work settles (the owner's call).
+  - **Other refinements parked for now (2026-11-12, the owner's call):** narrowing Tempo (section 1), custom chord progressions (section 2) and a more beautiful UI (section 4).
+  - **Width moves into the forest work (2026-11-12).** It gets a default value and is then left alone: a single control or a fixed setting, perhaps a different width for each layer. Width matters a lot for how it sounds on stereo speakers. This replaces the plan to remove the control at one fixed width (section 1).
 - **Open:**
+  - **Width: one control, one fixed setting, or a fixed width per layer?** For `plan-architecture`, then judged by ear on stereo speakers in the spike.
   - **What does "never louder than today" measure?** The loudest peak, the average loudness, or both. A limiter on the master would cap the peaks either way.
   - **Shimmer:** detuned copies and a faint high octave first. A true shimmer reverb needs a custom audio worklet, which `§no-build-step` allows but is more work.
   - **Recorded sounds at the edges:** the sets cover about F2 to G5 (Vibes F3 to A5). Lower and higher octaves suit the synthesized sounds; recorded ones may need new samples or stay in the middle layer.
