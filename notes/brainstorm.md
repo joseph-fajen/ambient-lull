@@ -174,6 +174,8 @@ The project started as a baseline of how the owner worked before the course (tag
   - **No AI credit** in commits or pull requests: no "Co-Authored-By: Claude", no "Generated with Claude Code". A Claude Code setting turns it off.
   - **The pull-request rule is enforced, not just written.** It lives in CLAUDE.md only, so it can't drift between two files. A GitHub ruleset on `main` requires a pull request, with 0 approvals because the owner works alone and GitHub won't let anyone approve their own PR. It refuses direct pushes from anyone: the owner, the agent, Archon or a script. `.claude/settings.json` also blocks the agent from running `gh pr merge`, because GitHub can't tell the agent's merge from the owner's.
 - **Open (2026-11-11): fit the Archon workflows when the course reaches Archon.** The three in `.archon/workflows/` already use branches and pull requests, but they hard-code commit messages (such as `feat: lane 1 — …`) without the area or the body parts, and read only CLAUDE.md, not `conventions.md`. Probably covered by the no-credit setting, since they run Claude in the repo; not yet confirmed. The ruleset protects `main` from them meanwhile.
+- **Open (2026-11-12, from the PR #5 review): fit `piv-review-pr` and `piv-review-changes` to Ambient Lull.** `piv-review-pr` still lists "type safety" among what to cover, and `piv-review-changes` still has Python-flavoured categories.
+- **Open (2026-11-12, from the PR #5 review): wire or delete `.claude/hooks/subagent_start_engineering.py`.** It isn't wired. The `code-reviewer` agent now reads `engineering.md` itself, so the hook would only guarantee it.
 
 ### Progress
 
