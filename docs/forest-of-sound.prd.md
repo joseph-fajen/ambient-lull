@@ -1,6 +1,8 @@
 # Epic: A forest of sound
 
-Brownfield epic for Ambient Lull. Written 2026-11-12 from an interview with the owner (`plan-create-prd`). Background and the first design ideas are in `docs/brainstorm.md`, section 9. This file is intent only: how to build it is left to `plan-architecture`.
+**Architecture:** [`docs/forest-of-sound.architecture.md`](forest-of-sound.architecture.md), how it's built (decided 2026-11-12).
+
+Brownfield epic for Ambient Lull. Written 2026-11-12 from an interview with the owner (`plan-create-prd`). Background and the first design ideas are in `docs/brainstorm.md`, section 9. This file is intent only: how it's built is in the architecture doc linked above.
 
 ## 1. Problem Statement
 
