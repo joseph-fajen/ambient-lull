@@ -190,3 +190,34 @@ The project started as a baseline of how the owner worked before the course (tag
 - **2026-11-12:** PR #8 (`piv-review-pr` and `piv-review-changes`) merged into `ai-layer`. All of `.claude/hooks/` reviewed: the stop gate fitted with `hooks-create` and wired, the rest deleted (see Decided). Tested on a scratch branch: with a planted failing test, a real `claude -p` session was blocked on tries 1 and 2 and let through on try 3; with passing tests and a changed file, it finished without a block.
 - **2026-11-12:** PR #9 (the hooks review) merged into `ai-layer`. The owner confirmed their edits to `engineering.md` and `direction.md`, made in the PR #3 follow-ups, so both are final. Next: merge `ai-layer` into `main`, then the app work in CLAUDE.md, starting with removing the Width control.
 - **2026-11-12:** PR #10 (the steering-docs note) merged into `ai-layer`. Before merging `ai-layer` into `main`, the drift check found `.agents/` (about 10,000 lines, never fitted); deleted (see Decided). Next: the `ai-layer` → `main` pull request.
+
+## 9. A forest of sound (big idea, exploring)
+
+- **Wanted (2026-11-12):** after listening for a while, the owner finds the music beautiful but flat: one melody, one space, one loudness. Two changes:
+  - **Richer texture:** many layers at once (foreground, middle, background), a shimmering quality overall, and not every sound through one filter.
+  - **Dynamics like emotional expression:** soft to loud, swelling and falling.
+- **Inspirations:**
+  - **Plant music** (electrodes on plants, the signals mapped to synthesized sounds): many sustained tones, others coming and going, some gliding in pitch.
+  - **The shore:** slow swells and falls, now and then a wave crashing.
+  - **Crickets and insects:** many similar voices singing together, each slightly different.
+  - **Many cycles with different lengths**, so the mix keeps changing and never quite repeats.
+  - **A wider range of pitch:** lower and higher octaves for colour and richness. Today the melody spans 2 octaves (MIDI 43–78).
+  - **Keep** Cycle keys and Cycle sounds & scales.
+- **Where the code stands:** one composer picks one note at a time (`src/music.js`), with harmony now and then adding a note on top. Every note goes through one reverb and one master level (`createBus` in `src/audio.js`) and peaks at the same `VOICE_PEAK`. There is already a slow 3-minute drift (`DRIFT_PERIOD`) and a per-note `level`, both starting points.
+- **The shape proposed (2026-11-12), three levels of time:**
+  - **Conductor (minutes):** the existing key, scale and sound cycles, plus a few slow "tides" (loudness, brightness, density, shimmer) with periods that don't line up, such as 47 s, 73 s, 131 s and 4 min. Eno's *Music for Airports* uses tape loops of different lengths the same way.
+  - **Layers (foreground, middle, background):** each with its own filter, stereo spread, reverb send, loudness and pitch register. Near is drier and brighter; far is darker, quieter and mostly reverb, maybe a second, longer reverb.
+  - **Voices (seconds):** sounds with a lifetime (enter, sing, fade, leave), of a few kinds: **Melodist** (today's note walk, up front), **Sustainer** (long tones that glide between scale notes; plant music), **Swarm** (one sound copied 8–20 times, each a little detuned, off-time and panned differently; crickets) and **Wave** (filtered noise that swells and recedes, now and then a brighter crash; the shore).
+  - Built as "an ecosystem on top of parallel layers": today's melody becomes the foreground Melodist, so nothing liked is lost. The conductor, layers and populations stay pure and tested; `src/audio.js` only plays what they decide.
+- **Decided (2026-11-12):**
+  - **The Wave layer may use noise**, a sound without pitch. Not everything has to be a note.
+  - **The tides drive the forest automatically.** No density or dynamics control for the listener.
+  - **A wider pitch range:** each layer gets its own register, so the whole spans more than today's 2 octaves (for example a low background, a high swarm).
+  - **Try it in a spike before deciding more:** a throwaway branch with one tide, three layers and three kinds of voice (Sustainer, Swarm, Wave) under today's melody, judged by listening clips.
+- **Open:**
+  - **Change Ambient Lull, or start a new project?** It's a new engine, not a refinement. It changes `direction.md §endless-gentle-music` ("a calm backdrop that never needs attention") and puts pressure on `§it-cant-sound-bad`. Decide after hearing the spike.
+  - **How loud is loud?** A gentle swell or real crescendos. A limiter on the master would cap the peaks either way.
+  - **Shimmer:** detuned copies and a faint high octave first. A true shimmer reverb needs a custom audio worklet, which `§no-build-step` allows but is more work.
+  - **Recorded sounds at the edges:** the sets cover about F2 to G5 (Vibes F3 to A5). Lower and higher octaves suit the synthesized sounds; recorded ones may need new samples or stay in the middle layer.
+  - **Measurement:** today's checks measure single notes. A changing mix needs checks over a long render: loudness over time, the worst peak and the quietest stretch.
+  - **Phone:** cap the active voices at about 24–32 and keep one or two shared reverbs; check on a real phone.
