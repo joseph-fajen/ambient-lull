@@ -32,7 +32,7 @@ docs/                 # design-thinking.md (why), build-plan.md (milestones), br
 
 ## Ground rules (conventions)
 
-- **"It can't sound bad"** is the core promise. Every setting combination should sound pleasant, and the defaults should sound good on the first Start.
+- **"It can't sound bad"** is the core promise: notes never clash. Scales, harmony and key changes are chosen so no setting combination gives clashing intervals, and the defaults sound good on the first Start.
 - **Keep the composer pure.** `src/music.js` decides which note and when, and is tested without audio. `src/audio.js` decides how it sounds.
 - **Measure, don't guess.** Volume matching, peak headroom and evenness are set by measurement, and the audio checks enforce them.
 - **Adding a sound:** add an entry to `SOUNDS` in `src/settings.js` and a recipe to `SOUND_RECIPES` in `src/audio.js`. Then set its gain so it matches Kalimba at the middle Tone. Check its evenness across MIDI 42–77, not just its average: Choir's first version averaged right but swung 23 dB from note to note. Check the worst-case peak too (limit 0.9).

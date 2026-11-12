@@ -9,12 +9,17 @@ this file keeps only the stance.
 
 ## What this IS
 
-- **§endless-gentle-music** Press Start for an endless, gentle melody over a soft drone, until Stop. The
-  value is a calm backdrop that never needs attention, not a piece to compose.
-- **§it-cant-sound-bad** Every combination of settings sounds pleasant, and the defaults sound good on the
-  first Start. A feature that can make it sound bad is out until it can't.
+- **§endless-gentle-music** Press Start for endless, gentle music, until Stop. Subtlety is the key: it never
+  demands attention and is pleasant as a background, but a listener who chooses to listen closely hears
+  something ever-varying, interesting and soothing, never flat. Not a piece to compose. For now two versions
+  sit side by side: today's melody over a soft drone, and the forest (`docs/forest-of-sound.prd.md`), a
+  hinted, shimmering melody in layers near and far.
+- **§it-cant-sound-bad** Notes never clash: scales, harmony and key changes are chosen so no combination of
+  settings gives clashing intervals, and the defaults sound good on the first Start. A feature that can
+  bring a clash is out until it can't.
 - **§toy-not-a-settings-form** Turning a control changes the music right away, on the next note. Few
-  controls, each earning its place; a good fixed value beats a slider.
+  controls, each earning its place; a good fixed value beats a slider. The forest page has only Start and
+  Stop, because it drives itself.
 - **§a-few-chosen-sounds** A small set of distinct, curated sounds, recorded where recordings sound better
   and synthesized where synthesis does. Sounds are judged by ear, and the weaker ones are removed.
 - **§browser-on-desktop-and-phone** For now, one web page that plays in a desktop or phone browser. A mobile
@@ -28,6 +33,9 @@ this file keeps only the stance.
 - **§not-an-instrument** Not a synth, sequencer or DAW. No piano roll, no per-note editing, no exposed synth
   parameters.
 - **§no-server** No backend, accounts or cloud sync. Everything the app keeps stays in the browser.
+- **§not-sleep-music** Not for falling asleep. It's for listening awake, in the background or closely.
+- **§no-field-recordings** No nature or field recordings (birds, real waves). The sounds evoke nature
+  without being recordings of it.
 - **§open-licences-only** Recorded sounds use CC0 or CC-BY samples only, credited. No sample that can't be
   redistributed.
 
