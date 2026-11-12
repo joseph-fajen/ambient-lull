@@ -16,9 +16,9 @@ The owner, the app's main listener, gets bored with Ambient Lull after about 5 m
 
 ## 3. Thesis (why build it)
 
-- **Why this:** the owner wants a combination they haven't found anywhere else: a tamboura-like drone (perhaps coming and going like a swell), circle-of-fifths key changes, rotating sounds and scales, an orchestral feel, shimmering layers and variety. Recordings are fixed. This mix doesn't exist as a recording, and the app already has half of it.
+- **Why this:** the owner wants a combination they haven't found anywhere else: a tamboura-like drone (perhaps coming and going like a swell), circle-of-fifths key changes, rotating sounds and scales, an orchestral feel, shimmering layers and variety.
 - **Why now:** the owner noticed being bored with the app as it is, and noticed preferring recordings like the plant music. That led to thinking of forests, oceans and insects as models.
-- **Why it beats how they cope today:** today the cope is switching to recordings. A generative version with this particular mix, endless and never quite repeating, would be something the recordings can't be.
+- **Why it beats how they cope today:** today the cope is switching to recordings. The owner is looking for a combination of sounds they haven't found elsewhere, while keeping the cycling keys, scales and sounds, "or something similar".
 - **The picture to judge it by:** watching the sunset from the top of a cliff. The ocean's tides and waves below, wildlife in the forest behind, a gentle breeze, and subtle orchestral qualities. Calming and soothing, but interesting and never static.
 
 ## 4. Hypothesis
@@ -60,7 +60,7 @@ It must include:
 
 It can leave out: new controls, presets, a new look, and polish on every sound.
 
-**Door check:** building it beside today's app is a two-way door, cheap to undo. The one-way doors are later and go to `plan-architecture`: whether it replaces today's sound (the owner's intent if it succeeds, perhaps with today's version kept as a choice) and whether it stays in Ambient Lull or becomes its own project.
+**Door check:** building it beside today's app is a two-way door, cheap to undo. The one-way doors are later and go to `plan-architecture`: whether it replaces today's sound (the owner's intent if it succeeds, perhaps with today's version kept as a choice). Decided: it stays in Ambient Lull, not a new project.
 
 ## 7. Success Metrics
 
@@ -85,6 +85,6 @@ It can leave out: new controls, presets, a new look, and polish on every sound.
 
 - [ ] **What does "orchestral" mean in sound?** The owner agreed it means sections entering and leaving, a wide sound and the melody passing between instruments. How much of that fits in the MVP is TBD — needs validation by ear.
 - [ ] **Does it replace today's sound if it works, or do both stay as choices?** The owner leans towards replacing it, but sees value in keeping today's version available.
-- [ ] **Change Ambient Lull, or start a new project?** For `plan-architecture` (`direction.md §endless-gentle-music` would change).
+- [x] **Change Ambient Lull, or start a new project?** Decided by the owner: change Ambient Lull. `direction.md §endless-gentle-music` will need the owner's update.
 - [ ] **Does "never louder than today" mean the loudest peak, the average loudness, or both?** TBD — needs measurement.
 - [ ] **Do the people listening with the owner hear it the way the owner does?** TBD — needs validation in the real test.

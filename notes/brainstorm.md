@@ -195,10 +195,10 @@ The project started as a baseline of how the owner worked before the course (tag
 
 - **Wanted (2026-11-12):** after listening for a while, the owner finds the music beautiful but flat: one melody, one space, one loudness. Two changes:
   - **Richer texture:** many layers at once (foreground, middle, background), a shimmering quality overall, and not every sound through one filter.
-  - **Dynamics like emotional expression:** soft to loud, swelling and falling.
+  - **Dynamics like emotional expression:** swelling and falling. (Later narrowed: quieter, never louder than today; see Decided.)
 - **Inspirations:**
   - **Plant music** (electrodes on plants, the signals mapped to synthesized sounds): many sustained tones, others coming and going, some gliding in pitch.
-  - **The shore:** slow swells and falls, now and then a wave crashing.
+  - **The shore:** slow swells and falls, now and then a wave crashing. (Later replaced: waves far offshore, no crashing; see Decided.)
   - **Crickets and insects:** many similar voices singing together, each slightly different.
   - **Many cycles with different lengths**, so the mix keeps changing and never quite repeats.
   - **A wider range of pitch:** lower and higher octaves for colour and richness. Today the melody spans 2 octaves (MIDI 43–78).
@@ -207,7 +207,7 @@ The project started as a baseline of how the owner worked before the course (tag
 - **The shape proposed (2026-11-12), three levels of time:**
   - **Conductor (minutes):** the existing key, scale and sound cycles, plus a few slow "tides" (loudness, brightness, density, shimmer) with periods that don't line up, such as 47 s, 73 s, 131 s and 4 min. Eno's *Music for Airports* uses tape loops of different lengths the same way.
   - **Layers (foreground, middle, background):** each with its own filter, stereo spread, reverb, loudness and pitch register. Near is drier and brighter in a short space; far is darker, quieter and mostly reverb, in a long one.
-  - **Voices (seconds):** sounds with a lifetime (enter, sing, fade, leave), of a few kinds: **Melodist** (today's note walk, up front), **Sustainer** (long tones that glide between scale notes; plant music), **Swarm** (one sound copied 8–20 times, each a little detuned, off-time and panned differently; crickets) and **Wave** (filtered noise that swells and recedes, now and then a brighter crash; the shore).
+  - **Voices (seconds):** sounds with a lifetime (enter, sing, fade, leave), of a few kinds: **Melodist** (today's note walk, up front), **Sustainer** (long tones that glide between scale notes; plant music), **Swarm** (one sound copied 8–20 times, each a little detuned, off-time and panned differently; crickets) and **Wave** (filtered noise that swells and recedes, like waves far offshore, with no crash; the shore).
   - Built as "an ecosystem on top of parallel layers": today's melody becomes the foreground Melodist, so nothing liked is lost. The conductor, layers and populations stay pure and tested; `src/audio.js` only plays what they decide.
 - **Decided (2026-11-12):**
   - **Not one shared reverb.** One reverb for everything is too much of a limitation for this direction (the owner's call). Each layer gets its own space: a short room up front, a medium space in the middle and a long hall at the back. The spike starts with one reverb per layer; whether some voices blend between spaces is open. Check the cost on a phone, since reverbs are the heaviest part.
@@ -215,17 +215,17 @@ The project started as a baseline of how the owner worked before the course (tag
   - **The tides drive the forest automatically.** No density or dynamics control for the listener.
   - **A wider pitch range:** each layer gets its own register, so the whole spans more than today's 2 octaves (for example a low background, a high swarm).
   - **Try it in a spike before deciding more:** a throwaway branch with one tide, three layers and three kinds of voice (Sustainer, Swarm, Wave) under today's melody, judged by listening clips.
-  - **Gentle dynamics, quieter not louder (2026-11-12, the PRD interview).** The loudest moment is no louder than the app gets today; the contrast comes from dipping quieter. Like waves far offshore, rising and falling, not crashing on the shore. This drops the Wave's "now and then a brighter crash" above.
+  - **Gentle dynamics, quieter not louder (2026-11-12, the PRD interview).** The loudest moment is no louder than the app gets today; the contrast comes from dipping quieter. Like waves far offshore, rising and falling, not crashing on the shore. This replaces the first idea of a Wave with "now and then a brighter crash".
   - **The new version sits beside today's app** until it proves itself. If it works it replaces today's sound, perhaps with today's version kept as a choice.
   - **No nature recordings** for now: the sounds evoke nature without being field recordings.
   - **Not for sleep.** It's for the living room, listening closely or reading, often with others.
+  - **Change Ambient Lull, not a new project** (the owner's call, after the PRD review). It changes `direction.md §endless-gentle-music` ("a calm backdrop that never needs attention") and puts pressure on `§it-cant-sound-bad`; updating `direction.md` is the owner's edit, in its own reviewed PR.
 - **Open:**
-  - **Change Ambient Lull, or start a new project?** It's a new engine, not a refinement. It changes `direction.md §endless-gentle-music` ("a calm backdrop that never needs attention") and puts pressure on `§it-cant-sound-bad`. Decide after hearing the spike.
-  - **How loud is loud?** A gentle swell or real crescendos. A limiter on the master would cap the peaks either way.
+  - **What does "never louder than today" measure?** The loudest peak, the average loudness, or both. A limiter on the master would cap the peaks either way.
   - **Shimmer:** detuned copies and a faint high octave first. A true shimmer reverb needs a custom audio worklet, which `§no-build-step` allows but is more work.
   - **Recorded sounds at the edges:** the sets cover about F2 to G5 (Vibes F3 to A5). Lower and higher octaves suit the synthesized sounds; recorded ones may need new samples or stay in the middle layer.
   - **Measurement:** today's checks measure single notes. A changing mix needs checks over a long render: loudness over time, the worst peak and the quietest stretch.
-  - **Phone:** cap the active voices at about 24–32 and keep one or two shared reverbs; check on a real phone.
+  - **Phone:** cap the active voices at about 24–32, and check the cost of one reverb per layer on a real phone.
 
 ### Progress
 
