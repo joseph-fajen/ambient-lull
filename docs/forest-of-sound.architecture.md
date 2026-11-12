@@ -143,7 +143,7 @@ Decision rule: go on to the real test if the owner hears depth and change in cli
 - **Two tides:** loudness, about 73 s, and brightness, about 131 s, so a 4-minute clip has a few rises and dips. The density and shimmer tides wait for the real test.
 - **Three kinds of new voice** (Sustainer, Swarm, Wave) plus the hinted melody as the Melodist, with the drone as today, on the layers in the table.
 - **Placeholder sounds (the owner's call):** today's six sounds, used subtly, for the hinted melody, and simple synthesized sounds for the sustain, the swarm and the wave. Choosing the real palette comes after, with its own clips.
-- **Cycles on:** a key change every 30 s (today's default) and a sound change every 2 minutes, so each clip has 8 key changes and 2 sound changes. A scale change takes 12 minutes, so it isn't heard in a clip.
+- **Cycles on, faster sound turns for the clips:** a key change every 30 s (today's default) and, in the spike only, a sound change every 48 s, so each 4-minute clip has 7 key changes and 4 sound changes. A scale change normally comes after 6 sound changes, so it isn't heard in a clip.
 
 **The clips** (4 minutes each, same seed, sent as MP3s):
 
