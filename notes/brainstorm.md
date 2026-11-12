@@ -177,3 +177,4 @@ The project started as a baseline of how the owner worked before the course (tag
 ### Progress
 
 - **2026-11-11:** `baseline-v1` tagged. The course layer is committed as copied on `ai-layer`, and the parts written for the AI Tutor are removed. Next: fit `conventions.md`, CLAUDE.md and the settings to these decisions, then adapt `engineering.md`, `direction.md`, `piv-validate` and the `code-reviewer` agent.
+- **2026-11-12:** `conventions.md`, CLAUDE.md and the settings fitted (PR #1); review reports kept out of git (PR #2). `engineering.md` and `direction.md` drafted for Ambient Lull, waiting for the owner's edits. Next: the `code-reviewer` agent, then `piv-validate`, then the codebase-search note.

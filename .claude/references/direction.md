@@ -1,64 +1,52 @@
 # Direction: what this project is, and is not
 
-> **Edit this file to match YOUR project.** This is the product-direction steering document. `CLAUDE.md`
-> loads on every task and stays short. This file loads only when **scope is decided**: the planning,
-> architecture, and epic-slicing skills read it if it exists (`.claude/references/direction.md`, or
-> `direction.md` at the repo root), and a triage workflow can check every new issue or PR against it.
-> Every clause has a name so a decline can cite it: `direction.md §single-datastore`.
-> Shipped defaults describe the AI Tutor, the course's demo codebase. Replace them with yours.
+This is the product-direction steering document. `CLAUDE.md` loads on every task and stays short. This file
+loads only when **scope is decided**: the planning, architecture and epic-slicing skills read it. Every
+clause has a name so a decline can cite it, for example `direction.md §toy-not-a-settings-form`.
 
-> **Until you have rewritten it, this file is wrong for your repo.** If you are an agent reading
-> this and it still describes the AI Tutor rather than the codebase around you, say so in your
-> report and judge the change against `CLAUDE.md` and the other references instead. Steering the
-> wrong way is worse than not steering.
-
-This file is committed and shared by the whole team. Edit it deliberately, in a reviewed PR, so triage stays
-consistent across people and across runs.
+The owner edits it deliberately, in a reviewed PR. Decisions and their history live in `notes/brainstorm.md`;
+this file keeps only the stance.
 
 ## What this IS
 
-- **§tutor-over-published-content** A tutor that answers from the creator's published material (YouTube
-  transcripts and community content), with sources and timestamps on every answer. The value is grounded
-  answers, not chat.
-- **§single-datastore** One Postgres database with pgvector. Ingestion, users, and retrieval share it. A
-  second datastore is a direction call, not a ticket.
-- **§membership-gates-depth** Anyone can ask; linked members get the extended corpus. Membership is
-  verified against the community platform, never self-declared.
-- **§source-adapters** New content sources land as adapters behind the existing ingestion interface, so a
-  source is a slice, not a rewrite.
+- **§endless-gentle-music** Press Start for an endless, gentle melody over a soft drone, until Stop. The
+  value is a calm backdrop that never needs attention, not a piece to compose.
+- **§it-cant-sound-bad** Every combination of settings sounds pleasant, and the defaults sound good on the
+  first Start. A feature that can make it sound bad is out until it can't.
+- **§toy-not-a-settings-form** Turning a control changes the music right away, on the next note. Few
+  controls, each earning its place; a good fixed value beats a slider.
+- **§a-few-chosen-sounds** A small set of distinct, curated sounds, recorded where recordings sound better
+  and synthesized where synthesis does. Sounds are judged by ear, and the weaker ones are removed.
+- **§browser-on-desktop-and-phone** One web page that plays in a desktop or phone browser.
+- **§no-build-step** Plain HTML and JavaScript modules on the Web Audio API, with no dependencies and no build
+  step. It runs from a folder served as static files.
+- **§settings-not-recordings** Presets save settings, not exact performances. Each play is new.
 
 ## What this is NOT
 
-- **§not-a-general-chatbot** Not a general assistant. Questions outside the corpus get an honest "not
-  covered," not a confident answer from model memory.
-- **§not-multi-tenant** One deployment serves one creator's corpus. No per-tenant isolation, billing, or
-  workspace switching inside the app. Serving another creator means another deployment.
-- **§not-a-content-editor** The app reads published content; it never edits, hosts, or republishes it.
-- **§no-second-datastore** No Redis, no separate vector service, no document store alongside Postgres.
-  Cache and search live in the one database until a measured limit says otherwise.
-
-## Aspirational architecture
-
-Where the engineering is going. Do not reject a change for failing to complete this; reject new coupling
-that makes it materially harder.
-
-- **§slices-own-their-surface** Each feature is a vertical slice that owns its routes, service, repository,
-  and tests. Cross-cutting concerns live in shared modules that slices import; slices do not import each
-  other.
-- **§retrieval-behind-one-interface** Every retrieval strategy sits behind the same interface, so ranking
-  changes are a swap, not a rewrite of callers.
+- **§not-an-instrument** Not a synth, sequencer or DAW. No piano roll, no per-note editing, no exposed synth
+  parameters.
+- **§no-server** No backend, accounts or cloud sync. Everything the app keeps stays in the browser.
+- **§no-libraries** No audio, UI or framework libraries, and no bundler. A dependency is a direction call.
+- **§open-licences-only** Recorded sounds use CC0 or CC-BY samples only, credited. No sample that can't be
+  redistributed.
 
 ## Open questions (no stance yet)
 
-Direction calls not yet made. Work that touches these should surface the question for an explicit decision
-rather than be silently accepted or rejected.
+Direction calls not yet made. Work that touches these should raise the question for an explicit decision,
+not settle it quietly. Details in `notes/brainstorm.md`.
 
-- **§open-multi-language** Whether the corpus and answers support languages other than English.
-- **§open-voice-input** Whether voice input belongs in the product or stays a client concern.
+- **§open-chord-progressions** Custom chord progressions alongside Cycle keys: how they're entered, how long
+  each chord lasts, and what happens when a chord's notes aren't in the scale.
+- **§open-harmony** How often harmony sounds, and whether its slider stays. Parked.
+- **§open-mobile-app** A link, an installable web app, or a native app, depending on whether it must keep
+  playing with the screen locked. Parked.
+- **§open-ui-and-visuals** A more beautiful UI once the controls settle, and whether something moves with the
+  music.
 
 ## How to evolve this doc
 
-- Add an IS or IS NOT line when a triage forces a direction call.
-- Move an open question to IS or IS NOT once decided.
-- Cite the clause when declining or re-scoping: `direction.md §not-a-general-chatbot`.
-- Keep entries to one or two lines. This is for fast lookup during planning and triage, not a manifesto.
+- Add an IS or IS NOT line when a decision forces a direction call.
+- Move an open question to IS or IS NOT once it's decided in `notes/brainstorm.md`.
+- Cite the clause when declining or re-scoping a change.
+- Keep entries to one or two lines. This is for quick lookup while planning, not a manifesto.

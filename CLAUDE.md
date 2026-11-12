@@ -72,6 +72,6 @@ CHROME=/tmp/chrome npm run clips -- --sounds triangle,harp
 
 - Why the project is the way it is → `notes/design-thinking.md`. What's decided and open → `notes/brainstorm.md`.
 - Skills, subagents and references from the course AI layer → `.claude/skills/`, `.claude/agents/`, `.claude/references/`.
-- `.claude/references/engineering.md` and `direction.md` are still the course's unfilled templates. Fill them in before relying on them.
+- What code is judged against → `.claude/references/engineering.md`. What's in and out of scope → `.claude/references/direction.md`.
 
 Keep this file true: run `/rules-check-drift` before every merge.
