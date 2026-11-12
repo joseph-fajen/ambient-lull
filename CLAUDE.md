@@ -39,7 +39,7 @@ notes/                # design-thinking.md (why), build-plan.md (milestones), br
 - **Adding a recorded sound:** put mono MP3s, named by their real pitch, in `samples/<set>/`, add the set to `SAMPLE_SETS` in `src/samples.js`, a `sampledSound` recipe, and a `SOUNDS` entry with `samples`. Credit the source in `samples/CREDITS.md`, and use only open licences (CC0 or CC-BY). Measure each file's real pitch: VCSL names some instruments an octave low. Levelling per note is automatic; set the gain by measurement.
 - **Old presets must keep loading.** Settings are stored by name, and `normalizeSettings` fills in or falls back. The `waveform` field is read as `sound`, and removed sounds map to the closest kept (`REPLACED_SOUNDS` in `src/settings.js`).
 - **Git workflow:** every change goes on its own branch and through a pull request, notes included: `piv-create-pr`, then `piv-review-pr`. The owner merges; never push to `main`. GitHub refuses direct pushes to `main`, and `.claude/settings.json` blocks `gh pr merge`. Commit and push to the branch after each piece of work, once the tests pass. Commit, PR and review style, including no AI credit, is in `.claude/references/conventions.md`.
-- **Testing:** done means `npm test` passes, plus `npm run test:audio` after any change to `src/audio.js`.
+- **Testing:** done means `npm test` passes, plus `npm run test:audio` after any change to `src/audio.js` or `src/samples.js`.
 - Comments and notes use plain English, as in the existing files.
 
 ## Working principles (agent steering)

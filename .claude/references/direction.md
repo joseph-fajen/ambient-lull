@@ -17,17 +17,17 @@ this file keeps only the stance.
   controls, each earning its place; a good fixed value beats a slider.
 - **§a-few-chosen-sounds** A small set of distinct, curated sounds, recorded where recordings sound better
   and synthesized where synthesis does. Sounds are judged by ear, and the weaker ones are removed.
-- **§browser-on-desktop-and-phone** One web page that plays in a desktop or phone browser.
-- **§no-build-step** Plain HTML and JavaScript modules on the Web Audio API, with no dependencies and no build
-  step. It runs from a folder served as static files.
-- **§settings-not-recordings** Presets save settings, not exact performances. Each play is new.
+- **§browser-on-desktop-and-phone** For now, one web page that plays in a desktop or phone browser. A mobile
+  app is considered only after the refinements and the UI settle (§open-mobile-app).
+- **§no-build-step** Plain HTML and JavaScript modules on the Web Audio API, served as static files. No audio,
+  UI or framework libraries, no other dependencies and no bundler. Adding one is a direction call.
+- **§settings-not-recordings** Presets save settings, not exact performances.
 
 ## What this is NOT
 
 - **§not-an-instrument** Not a synth, sequencer or DAW. No piano roll, no per-note editing, no exposed synth
   parameters.
 - **§no-server** No backend, accounts or cloud sync. Everything the app keeps stays in the browser.
-- **§no-libraries** No audio, UI or framework libraries, and no bundler. A dependency is a direction call.
 - **§open-licences-only** Recorded sounds use CC0 or CC-BY samples only, credited. No sample that can't be
   redistributed.
 
@@ -40,7 +40,7 @@ not settle it quietly. Details in `notes/brainstorm.md`.
   each chord lasts, and what happens when a chord's notes aren't in the scale.
 - **§open-harmony** How often harmony sounds, and whether its slider stays. Parked.
 - **§open-mobile-app** A link, an installable web app, or a native app, depending on whether it must keep
-  playing with the screen locked. Parked.
+  playing with the screen locked. Parked until the refinements and the UI settle.
 - **§open-ui-and-visuals** A more beautiful UI once the controls settle, and whether something moves with the
   music.
 

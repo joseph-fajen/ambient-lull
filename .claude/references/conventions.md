@@ -31,7 +31,7 @@ Each section has **mechanical** rules (a pattern could check them) and **judgmen
 
 **Judgment (rubric for the judge):** <!-- #pr-quality -->
 - The Summary explains WHY the change exists (the intent), not just what it touches.
-- Validation states what was actually run, not what should be. `npm test` always; `npm run test:audio` after any change to `src/audio.js`; and for any change to the sound, the listening clips sent and whether the owner has heard them yet.
+- Validation states what was actually run, not what should be. `npm test` always; `npm run test:audio` after any change to `src/audio.js` or `src/samples.js`; and for any change to the sound, the listening clips sent and whether the owner has heard them yet.
 
 ## review
 
