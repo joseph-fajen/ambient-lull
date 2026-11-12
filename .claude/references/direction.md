@@ -4,7 +4,7 @@ This is the product-direction steering document. `CLAUDE.md` loads on every task
 loads only when **scope is decided**: the planning, architecture and epic-slicing skills read it. Every
 clause has a name so a decline can cite it, for example `direction.md §toy-not-a-settings-form`.
 
-The owner edits it deliberately, in a reviewed PR. Decisions and their history live in `notes/brainstorm.md`;
+The owner edits it deliberately, in a reviewed PR. Decisions and their history live in `docs/brainstorm.md`;
 this file keeps only the stance.
 
 ## What this IS
@@ -34,7 +34,7 @@ this file keeps only the stance.
 ## Open questions (no stance yet)
 
 Direction calls not yet made. Work that touches these should raise the question for an explicit decision,
-not settle it quietly. Details in `notes/brainstorm.md`.
+not settle it quietly. Details in `docs/brainstorm.md`.
 
 - **§open-chord-progressions** Custom chord progressions alongside Cycle keys: how they're entered, how long
   each chord lasts, and what happens when a chord's notes aren't in the scale.
@@ -47,6 +47,6 @@ not settle it quietly. Details in `notes/brainstorm.md`.
 ## How to evolve this doc
 
 - Add an IS or IS NOT line when a decision forces a direction call.
-- Move an open question to IS or IS NOT once it's decided in `notes/brainstorm.md`.
+- Move an open question to IS or IS NOT once it's decided in `docs/brainstorm.md`.
 - Cite the clause when declining or re-scoping a change.
 - Keep entries to one or two lines. This is for quick lookup while planning, not a manifesto.

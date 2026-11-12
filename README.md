@@ -86,7 +86,7 @@ tests/
   *.test.js            unit tests (node --test)
   audio-checks.html    offline audio measurements, opened in the browser
   run-audio-checks.mjs runs those in headless Chrome from the command line
-notes/           design thinking and the build plan
+docs/            design thinking, the build plan, decisions and epics
 samples/         recorded notes for the sampled sounds, and their credits (CREDITS.md)
 ```
 

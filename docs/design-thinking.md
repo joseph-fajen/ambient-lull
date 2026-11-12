@@ -5,11 +5,11 @@ Discussion notes from the baseline exercise (lessons 1.2–1.3), 2026-11-05.
 ## Where we left off
 
 - **Update, end of 2026-11-05:** v1 is built and on `main`, following `build-plan.md`. Beyond the v1 spec it has a root drone (on/off and volume), and "Cycle keys" round the circle of fifths with an adjustable interval. Still to do: the listening sweep (build plan, milestone 7).
-- Started the baseline exercise with `notes/baseline-prompt.md`. Claude proposed a plan, then I paused before any code was written to think the design through. ~~No code has been written yet.~~
+- Started the baseline exercise with `docs/baseline-prompt.md`. Claude proposed a plan, then I paused before any code was written to think the design through. ~~No code has been written yet.~~
 - I want more than the original prompt asked for: **any key**, a **selection of scales**, and **3–4 waveforms**. Start simple, but leave room to grow.
 - Next steps:
   1. ~~Answer the open questions below.~~ Done, see "Decisions made".
-  2. ~~Update the baseline prompt.~~ Done: `notes/baseline-prompt-v2.md`, with the original left untouched for the record.
+  2. ~~Update the baseline prompt.~~ Done: `docs/baseline-prompt-v2.md`, with the original left untouched for the record.
   3. ~~Build v1.~~ Done.
 - Baseline reflection note: stopping to think before building was a driver's-seat moment. Remember it for the three diagnostic questions.
 

@@ -1,6 +1,6 @@
 # Conventions: how Ambient Lull ships work
 
-This is the one place the ship-step conventions live. `piv-commit`, `piv-create-pr`, `piv-review-pr` and `piv-review-changes` read it at run time, so the agent writes and reviews this project's way, not a generic default. The decisions behind it are in `notes/brainstorm.md`, section 8.
+This is the one place the ship-step conventions live. `piv-commit`, `piv-create-pr`, `piv-review-pr` and `piv-review-changes` read it at run time, so the agent writes and reviews this project's way, not a generic default. The decisions behind it are in `docs/brainstorm.md`, section 8.
 
 Each section has **mechanical** rules (a pattern could check them) and **judgment** rules (a reviewer has to weigh them). There are no automatic checks in this repo yet. If some are added, derive them from the mechanical rules here and update both together.
 
