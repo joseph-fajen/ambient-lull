@@ -215,6 +215,10 @@ The project started as a baseline of how the owner worked before the course (tag
   - **The tides drive the forest automatically.** No density or dynamics control for the listener.
   - **A wider pitch range:** each layer gets its own register, so the whole spans more than today's 2 octaves (for example a low background, a high swarm).
   - **Try it in a spike before deciding more:** a throwaway branch with one tide, three layers and three kinds of voice (Sustainer, Swarm, Wave) under today's melody, judged by listening clips.
+  - **Gentle dynamics, quieter not louder (2026-11-12, the PRD interview).** The loudest moment is no louder than the app gets today; the contrast comes from dipping quieter. Like waves far offshore, rising and falling, not crashing on the shore. This drops the Wave's "now and then a brighter crash" above.
+  - **The new version sits beside today's app** until it proves itself. If it works it replaces today's sound, perhaps with today's version kept as a choice.
+  - **No nature recordings** for now: the sounds evoke nature without being field recordings.
+  - **Not for sleep.** It's for the living room, listening closely or reading, often with others.
 - **Open:**
   - **Change Ambient Lull, or start a new project?** It's a new engine, not a refinement. It changes `direction.md §endless-gentle-music` ("a calm backdrop that never needs attention") and puts pressure on `§it-cant-sound-bad`. Decide after hearing the spike.
   - **How loud is loud?** A gentle swell or real crescendos. A limiter on the master would cap the peaks either way.
@@ -222,3 +226,7 @@ The project started as a baseline of how the owner worked before the course (tag
   - **Recorded sounds at the edges:** the sets cover about F2 to G5 (Vibes F3 to A5). Lower and higher octaves suit the synthesized sounds; recorded ones may need new samples or stay in the middle layer.
   - **Measurement:** today's checks measure single notes. A changing mix needs checks over a long render: loudness over time, the worst peak and the quietest stretch.
   - **Phone:** cap the active voices at about 24–32 and keep one or two shared reverbs; check on a real phone.
+
+### Progress
+
+- **2026-11-12:** the epic is written with `plan-create-prd`: `forest-of-sound.prd.md` at the repo root. Its bet: the owner leaves it on for 45 minutes or more, 3 times in 2 weeks; it's wrong if they still switch off within about 15 minutes, it sounds busy, any moment is louder than today, or the key changes and rotating sounds are lost. Next: `plan-architecture` in a fresh session, then the spike (ear-check clips first).
