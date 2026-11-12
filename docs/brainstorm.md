@@ -221,6 +221,7 @@ The project started as a baseline of how the owner worked before the course (tag
   - **No nature recordings** for now: the sounds evoke nature without being field recordings.
   - **Not for sleep.** It's for the living room, listening closely or reading, often with others.
   - **Change Ambient Lull, not a new project** (the owner's call, after the PRD review). It changes `direction.md §endless-gentle-music` ("a calm backdrop that never needs attention") and puts pressure on `§it-cant-sound-bad`; updating `direction.md` is the owner's edit, in its own reviewed PR.
+  - **Other refinements parked (2026-11-12).** Removing the Width control (section 1), narrowing Tempo (section 1), custom chord progressions (section 2) and a more beautiful UI (section 4) wait until the forest work settles (the owner's call).
 - **Open:**
   - **What does "never louder than today" measure?** The loudest peak, the average loudness, or both. A limiter on the master would cap the peaks either way.
   - **Shimmer:** detuned copies and a faint high octave first. A true shimmer reverb needs a custom audio worklet, which `§no-build-step` allows but is more work.
