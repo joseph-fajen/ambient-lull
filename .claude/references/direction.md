@@ -22,7 +22,8 @@ this file keeps only the stance.
   Stop, because it drives itself.
 - **§a-curated-palette** A curated palette of distinct sounds, up to about 24, recorded where recordings
   sound better and synthesized where synthesis does. Sounds are judged by ear, and the weaker ones are removed.
-- **§browser-on-desktop-and-phone** For now, one web page that plays in a desktop or phone browser. A mobile
+- **§browser-on-desktop-and-phone** For now, one web page that plays in a desktop or phone browser: the forest
+  page, while it's being tried. Today's page is set aside for now and stays as it is. A mobile
   app is considered only after the refinements and the UI settle (§open-mobile-app).
 - **§no-build-step** Plain HTML and JavaScript modules on the Web Audio API, served as static files. No audio,
   UI or framework libraries, no other dependencies and no bundler. Adding one is a direction call.
