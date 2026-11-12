@@ -1,150 +1,46 @@
-# Hooks — the deterministic layer of the AI Layer
+# Hooks
 
-Hooks are the fifth primitive. Rules, subagents, tools, and skills are all things the agent *reaches for*.
-A hook is the one the agent never chooses: it fires automatically on a lifecycle event.
+A hook is a script Claude Code runs on its own when something happens, such as the agent finishing a turn.
+The agent doesn't choose to run it. A rule in CLAUDE.md asks; a hook makes sure.
 
-> **A rule asks the agent to behave. A hook guarantees it.**
->
-> Reach for a rule when "usually" is fine. Reach for a hook when it **must** happen every single time.
+## What's wired
 
-## What ships here
+| File | Event | What it does |
+|---|---|---|
+| `stop-gate.sh` | Stop | When the agent tries to finish with changed files, it runs `npm test`. If the tests fail, it blocks the stop and hands the failures back, so the agent has to fix them first. It blocks twice in one session, then lets the 3rd stop through and says the tests did not pass. |
 
-| File | Event | What it does | Can it block? |
-|---|---|---|---|
-| `pre_tool_use.py` | **PreToolUse** | Blocks reading/writing/searching a real env file (committed `.env.example` templates are allowed) and blocks `rm -rf`. Prints the reason to stderr and `exit(2)` → the tool is stopped and the agent is told why, so it adapts. | **Yes** — this is the guarantee |
-| `post_tool_use.py` | **PostToolUse** | Appends every tool call to `logs/post_tool_use.json` — a full audit trail of what the agent did. | No — the tool already ran; observe only |
+It's wired in `.claude/settings.json`. Its block counts are kept in `.claude/hooks/.gate-state/`, which git
+ignores.
 
-That split *is* the mental model: **pre = gate, post = log.**
+- **Why `npm test` and not the audio checks:** `npm test` takes under a second. The audio checks take 5 to 7
+  minutes, which is too long to run every time a turn ends. `piv-validate` runs them when `src/audio.js` or
+  `src/samples.js` changed.
+- **Only exit 2 blocks.** `npm test` exits 1 when a test fails, so the script converts it. If git or npm is
+  missing, the stop goes through.
+- **To change the command**, edit `TEST_COMMAND` at the top of the script.
 
-## Also here, and deliberately NOT switched on
+## Test it without the agent
 
-Three **automation** hooks. They do a different job from the two above: those are always-on safety, these drive a workflow. A hook only exists once it is wired into `.claude/settings.json`, so as files on disk these are **inert**.
-
-| File | Event | Shape | What it does |
-|---|---|---|---|
-| `format-touched.sh` | PostToolUse `Edit\|Write` | **REACT** | Formats the file that was just touched |
-| `stop-gate.sh` | Stop | **GATE** | Refuses to let the session finish until the checks are green. Skips a clean worktree; converts a checker's exit 1 into the **exit 2** that actually blocks |
-| `baton.sh` | Stop (`async`) | **BATON** | Issue artifact present and fix output absent, so it launches the fix skill in a fresh `claude -p`. Keeps an in-flight marker on disk |
-
-`automation-hooks.settings.json` is the stanza that wires them up. Merge its `hooks` block into your own `.claude/settings.json` when you want the behaviour.
-
-> ⚠️ **Think before you merge it.** Hooks fire on *every* session in the repo they are configured in, not just the one you had in mind. `stop-gate.sh` will stop you ending a session while checks are red, and `baton.sh` spawns a fresh `claude -p` on every Stop. That is exactly what they are for, and it is also why they ship switched off.
-
-They are worth reading even switched off, because the three shapes are the whole vocabulary: **react** to something that happened, **gate** something from finishing, and **hand the baton** to the next agent. With `pre = gate, post = log` above, that is every hook you are likely to write.
-
-### Exit codes — the one thing to get right
-
-**Only `exit 2` blocks.** Not exit 1, which is what every linter, type checker and test runner returns on failure. Converting one into the other is most of what a gate hook does.
-
-| Exit | Meaning |
-|---|---|
-| `0` | success. stdout goes to the debug log (except on `UserPromptSubmit` / `SessionStart`, where it becomes context) |
-| **`2`** | **blocking error.** stderr is handed to the agent as the reason |
-| anything else | non-blocking error: noise, no effect |
-
-What `exit 2` blocks depends on the event, and these hooks sit on events with different answers:
-
-| Event | Does `exit 2` block? |
-|---|---|
-| `PreToolUse` | **yes** — the tool call is stopped (`pre_tool_use.py` relies on this) |
-| `Stop` | **yes** — the session is prevented from finishing (`stop-gate.sh` relies on this) |
-| `PostToolUse` | **no** — the tool already ran; stderr is merely shown, so `format-touched.sh` always exits 0 |
-
-`baton.sh` is `async`, which is fire-and-forget: its exit code is never read, so it exits 0 throughout.
-
-⚠️ Both scripts assume your project's real check commands. Open them before wiring them up: `stop-gate.sh` in particular runs a checker that must exit non-zero on failure, and `format-touched.sh` formats with a specific tool. See `automations/README.md` for the same configure-before-you-run point applied to the two workflow templates.
-
-## Turning them on
-
-Hooks are the one primitive that does something the moment it exists, so the pack ships the wiring as a
-**template** rather than a live file (same idea as `.claude/CLAUDE.md.template`). Copy it in your project:
-
-```bash
-cp .claude/settings.json.example .claude/settings.json
+```sh
+echo '{"session_id":"t"}' | CLAUDE_PROJECT_DIR=$PWD .claude/hooks/stop-gate.sh; echo "exit=$?"
 ```
 
-`.claude/settings.json` is gitignored here in the course repo so the hooks don't fire while you're reading the
-material. **In your own project, commit it** — that's how the whole team inherits the same guarantees.
-If you already have a `settings.json`, merge the `hooks` block in rather than overwriting it.
+`exit=0` with a clean tree or passing tests. `exit=2`, with the failures printed, when a test fails and files
+have changed.
 
-## Try it
+## Removed, and why
 
-```
-ask the agent to read your env file          -> blocked (exit 2, reason handed back)
-ask it to read app/backend/.env.example      -> allowed
-ask it to run `rm -rf ...`                   -> blocked
-any normal command                           -> allowed, and logged to logs/post_tool_use.json
-```
+The course pack shipped more hooks, written for its Python demo app. They were removed on 2026-11-12 (see
+`notes/brainstorm.md`, section 8):
 
-You can also test a hook directly, without the agent:
+- `pre_tool_use.py` guarded secrets and `rm -rf`. This repo has no secrets, and it blocked any command that
+  mentions `process.env`, which the audio-check scripts use.
+- `post_tool_use.py` logged every tool call to a file nobody read.
+- `subagent_start_engineering.py` loaded `engineering.md` into the `code-reviewer` agent, which already reads it.
+- `format-touched.sh` ran a Python formatter. This project has no formatter (`direction.md §no-build-step`).
+- `baton.sh` started the next skill from an issue file. There are no issue files here yet.
 
-```bash
-echo '{"tool_name":"Read","tool_input":{"file_path":".env"}}' | uv run .claude/hooks/pre_tool_use.py; echo "exit=$?"
-```
+`baton.sh`, `format-touched.sh` and the course's `stop-gate.sh` are kept as templates in
+`.claude/skills/compose-hook-workflow/references/`. To write a new hook, use the `hooks-create` skill.
 
-`exit=2` means the guard fired.
-
-## Adding your own — you don't have to write Python
-
-Use the **`hooks-create`** skill and describe the guarantee in plain English:
-
-```
-/hooks-create "Don't let the agent finish until my tests pass — run my test command when it tries to stop, and if it fails, block the stop and tell it to fix the failures."
-```
-
-It picks the right lifecycle event, writes the script, and merges it into `settings.json`.
-Common ones worth adding:
-
-- **stop-until-green** (`Stop`) — the agent can't declare done while tests are red.
-- **protected paths** (`PreToolUse`) — never edit `migrations/`, prod config, or lockfiles.
-- **auto-format** (`PostToolUse`) — format every file the moment it's edited.
-
-## Loading a steering document into the reviewer (Phase 4, team standard)
-
-`subagent_start_engineering.py` makes the review deterministic. A `SubagentStart` hook fires when a subagent is
-spawned, its matcher is the agent's name, and `hookSpecificOutput.additionalContext` goes into that subagent's
-context only. So the `code-reviewer` agent always starts with `engineering.md`, and nothing else pays for it:
-
-```json
-{
-  "hooks": {
-    "SubagentStart": [
-      { "matcher": "code-reviewer",
-        "hooks": [ { "type": "command",
-                     "command": "uv run ${CLAUDE_PROJECT_DIR}/.claude/hooks/subagent_start_engineering.py" } ] }
-    ]
-  }
-}
-```
-
-Each load is appended to `.claude/logs/steering-loads.log`, so you can see it happen. Two honest notes. The
-cheaper default is the pointer the pack already ships: the plan, implement, and review skills read
-`engineering.md` and `direction.md` themselves when the file exists. The hook is the deterministic option for the
-one place you never want it missed. A `SessionStart` hook that runs `cat` on a document does the same for every
-session, at the cost of those tokens on every one-line question.
-
-## Two things to know
-
-- **Hooks run real code, automatically, with your credentials, with no sandbox.** Review a hook the way you'd
-  review a CI script. Only run hooks you have read and trust. This is the same caution as MCP servers.
-- **Coverage is yours.** The hook is guaranteed to *run*; what it *catches* is only as good as the check you
-  wrote. It is the enforcement point, not omniscience.
-
-  Concretely, `pre_tool_use.py` covers three routes to a secret: the **env file**, the **other credential
-  files** (ssh keys, `.pem`, `.aws/credentials`, `.netrc`, `credentials.json`), and the **process environment**
-  (the env-dumping shell builtins, a bare `env`, echoing a `*_KEY` / `*_TOKEN` variable, or code that reads the
-  environment map). That last route matters more than it looks — a guard that blocks the env *file* but not the
-  *environment* is mostly theatre, because the same values are sitting right there in the shell.
-
-  **What it deliberately does not cover: the two-step attack.** Nothing stops the agent *writing* a script that
-  reads the environment and then running it — the run looks innocent, because the secret-handling lives in a
-  file that was just created. Closing that means inspecting the **content** of `Write`/`Edit` calls, not just
-  the command, which is a genuinely different check and roughly triples the size of this file. If you are
-  guarding something that matters, that is the next thing to add.
-
-## Portability
-
-This is not a Claude Code party trick. Codex and Cursor use the same shape (a script, JSON on stdin,
-`exit 2` to block); Gemini CLI does the same job by reading a structured JSON decision instead of the exit
-code; Pi and opencode run hooks in-process as plugins. Learn it once, it transfers — the same way `AGENTS.md`
-became the shared rules file.
+A hook runs code automatically, with your access, on every matching event. Read one before wiring it.

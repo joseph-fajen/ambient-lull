@@ -1,2 +1,3 @@
 clips/
 .claude/code-reviews/
+.claude/hooks/.gate-state/
