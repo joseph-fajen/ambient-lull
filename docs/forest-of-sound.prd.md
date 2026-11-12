@@ -88,5 +88,5 @@ It can leave out: new controls, presets, a new look, and polish on every sound.
 - [ ] **What does "orchestral" mean in sound?** The owner agreed it means sections entering and leaving, a wide sound and the melody passing between instruments. How much of that fits in the MVP is TBD — needs validation by ear.
 - [ ] **Does it replace today's sound if it works, or do both stay as choices?** The owner leans towards replacing it, but sees value in keeping today's version available.
 - [x] **Change Ambient Lull, or start a new project?** Decided by the owner: change Ambient Lull. `direction.md §endless-gentle-music` will need the owner's update.
-- [ ] **Does "never louder than today" mean the loudest peak, the average loudness, or both?** TBD — needs measurement.
+- [x] **Does "never louder than today" mean the loudest peak, the average loudness, or both?** Decided: both, with a small tolerance on the average and a limiter as a backstop. See the architecture doc, section 4.
 - [ ] **Do the people listening with the owner hear it the way the owner does?** TBD — needs validation in the real test.

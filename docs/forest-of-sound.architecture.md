@@ -2,7 +2,7 @@
 
 The twin of the epic, `docs/forest-of-sound.prd.md`: the epic says what and why, this file says how. Written 2026-11-12 with the owner (`plan-architecture`), grounded in the epic and `docs/brainstorm.md`, section 9. It's a high-level decision doc, not a task plan: each ticket gets its own plan later (`piv-plan-implementation`).
 
-**Direction note.** The epic changes `direction.md §endless-gentle-music` ("a calm backdrop that never needs attention"): the forest is meant for listening closely too. Updating `direction.md` is the owner's edit, in its own PR. Nothing here depends on it, and every other clause holds: no build step, no libraries, no server, open-licence samples only, nothing new for the listener to set (`§toy-not-a-settings-form`).
+**Direction note.** The epic changes `direction.md §endless-gentle-music` ("a calm backdrop that never needs attention"): the forest is meant for listening closely too. Updating `direction.md` is the owner's edit, in its own PR. Nothing here depends on it, and every other clause holds: no build step, no libraries, no server, open-licence samples only, nothing new for the listener to set (`§toy-not-a-settings-form`). One more thing changes: **the palette has to be larger**, perhaps 24 sounds, against today's six (`§a-few-chosen-sounds`, renamed `§a-curated-palette` in the direction PR).
 
 ## Problem & goals
 
@@ -80,7 +80,7 @@ Measure **both** the peak and the average, on long offline renders of both engin
 
 - **Reference:** today's app at its defaults with both cycles on, rendered just as long, over several seeds.
 - **Peak:** the forest's worst sample before the limiter is no higher than today's worst case. The existing peak limit is 0.9.
-- **Average:** the loudest 3-second stretch, as RMS across both channels, is no louder than today's loudest 3-second stretch, within about 0.5 dB. Plain RMS doesn't play down low sounds the way the ear does, so it errs on the safe side for the drone and the waves.
+- **Average:** the loudest 3-second stretch, as RMS across both channels, is no louder than today's loudest 3-second stretch, within a small tolerance of about 0.5 dB (the owner's call: a small tolerance is fine). Plain RMS doesn't play down low sounds the way the ear does, so it errs on the safe side for the drone and the waves.
 - **The dip:** the quietest 3-second stretch reaches about 6–10 dB below the loudest, and is never silent. The exact range is set from what sounds right in the spike.
 - **Backstop:** a gentle limiter on the **forest's master only** (a `DynamicsCompressorNode`, set high and fast). The checks show it hardly ever works. A limiter you can hear working would be a bug, not the design.
 - These become new long-render audio checks in the real build. Today's checks measure single notes, so they need this addition. Keep the renders short enough that `npm run test:audio` stays within a few more minutes.
@@ -128,7 +128,7 @@ Question:      Does an ecosystem of layers, voices and tides sound like the righ
 Spike:         On a throwaway branch: pure tides (2), a conductor, the layer table, and
                planners for Sustainer, Swarm and Wave under the hinted melody (3 detuned
                copies of today's melody) and today's drone, all with placeholder sounds,
-               played through 3 layer buses with 3 reverbs. A forest clip page renders
+               played through 4 layer buses sharing 3 reverbs. A forest clip page renders
                4-minute clips offline. No forest.html, no phone check, no new audio checks.
                Timebox: about 2 working sessions.
 Decision rule: go on to the real test if the owner hears depth and change in clip B and

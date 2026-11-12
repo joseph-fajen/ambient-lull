@@ -235,7 +235,7 @@ The project started as a baseline of how the owner worked before the course (tag
   - ~~**Width: one control, one fixed setting, or a fixed width per layer?**~~ Decided 2026-11-12: a fixed width per layer (see Decided). Which width set, by ear in the spike.
   - ~~**What does "never louder than today" measure?**~~ Decided 2026-11-12: both, plus a limiter as a backstop (see Decided).
   - **Shimmer:** detuned copies and a faint high octave first. A true shimmer reverb needs a custom audio worklet, which `§no-build-step` allows but is more work.
-  - **Recorded sounds at the edges:** the sets cover about F2 to G5 (Vibes F3 to A5). Lower and higher octaves suit the synthesized sounds; recorded ones may need new samples or stay in the middle layer.
+  - ~~**Recorded sounds at the edges:**~~ Decided 2026-11-12: recorded sounds stay in Near, and the lower and higher registers are synthesized (`docs/forest-of-sound.architecture.md`, section 3).
   - **Measurement:** today's checks measure single notes. A changing mix needs checks over a long render: loudness over time, the worst peak and the quietest stretch.
   - **The sound palette (major, 2026-11-12):** the new vision needs the sounds rethought. All six of today's sounds have qualities worth keeping (the Pad especially) and can stay, used more subtly, but many new sounds will be needed. After the spike.
   - **Phone:** cap the active voices at about 24–32, and check the cost of one reverb per layer on a real phone.
