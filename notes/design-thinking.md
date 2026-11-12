@@ -83,8 +83,8 @@ These four structural choices cost almost nothing now and make most future featu
 - stereo panning
 - ~~presets~~ (moved into v1)
 - visuals
-- seeded randomness ("replay that exact piece")
-- recording to audio
+- ~~seeded randomness ("replay that exact piece")~~ (not wanted, 2026-11-12)
+- ~~recording to audio~~ (not wanted, 2026-11-12)
 
 ## Original technical plan (from before the pause)
 

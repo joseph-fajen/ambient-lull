@@ -121,6 +121,7 @@ Picked to spread across the things a listener hears first: how a note starts, wh
 ## 5. Mobile: link, web app, or phone app
 
 - **Decided (2026-11-06): back burner.** Not urgent. The notes below are kept for later.
+- **Decided (2026-11-12): the web page only, for now.** Consider a mobile app only after the refinements (sections 1–2) and the UI (section 4) settle.
 
 The options, cheapest first:
 
@@ -178,3 +179,4 @@ The project started as a baseline of how the owner worked before the course (tag
 
 - **2026-11-11:** `baseline-v1` tagged. The course layer is committed as copied on `ai-layer`, and the parts written for the AI Tutor are removed. Next: fit `conventions.md`, CLAUDE.md and the settings to these decisions, then adapt `engineering.md`, `direction.md`, `piv-validate` and the `code-reviewer` agent.
 - **2026-11-12:** `conventions.md`, CLAUDE.md and the settings fitted (PR #1); review reports kept out of git (PR #2). `engineering.md` and `direction.md` drafted for Ambient Lull, waiting for the owner's edits. Next: the `code-reviewer` agent, then `piv-validate`, then the codebase-search note.
+- **2026-11-12:** PR #3 merged; its after-merge review led to four follow-ups. CLAUDE.md now asks for `npm run test:audio` after changes to `src/samples.js` too. `direction.md` drops "each play is new" (no exact replay and no recording to audio: not wanted, `design-thinking.md` §7), says "for now" on the web page, and merges the two no-dependencies clauses.
