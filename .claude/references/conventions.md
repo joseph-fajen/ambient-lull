@@ -41,7 +41,8 @@ Each section has **mechanical** rules (a pattern could check them) and **judgmen
 
 **Judgment (rubric for the judge):** <!-- #review-routing -->
 - HUMAN READS points at the code that carries this project's promises for THIS diff, not a random sample of touched files:
-  - "It can't sound bad": gains, peaks, the master level and the reverb in `src/audio.js` and `src/samples.js`.
+  - Measured levels ("Measure, don't guess"): gains, peaks, the master level and the reverb in `src/audio.js` and `src/samples.js`.
+  - "It can't sound bad" (notes never clash): the scales, the harmony and the key changes in `src/music.js`.
   - The composer stays pure: no audio in `src/music.js` or `src/scheduler.js`.
   - Old presets keep loading: `normalizeSettings` and `REPLACED_SOUNDS` in `src/settings.js`, and `src/presets.js`.
 - HUMAN TESTS holds anything that has to be heard: a change to the sound goes there with its listening clips, because only the owner can judge it by ear.

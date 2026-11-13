@@ -7,7 +7,7 @@ Generative ambient music in the browser: press Start for an endless, gentle melo
 ## Where things stand
 
 - **Built:** v1 plus everything in `docs/build-plan.md` ("After v1"), and 6 sounds: 4 recorded (Piano, Upright, Harp, Vibes) and 2 synthesized (Kalimba, Pad). The other 10 synthesized sounds were removed on 2026-11-09. See `docs/brainstorm.md`, section 3. Also **Cycle sounds** (2026-11-09): a new sound every 2 minutes and a new scale after all six. See section 6.
-- **Next and open:** the forest-of-sound epic (`docs/forest-of-sound.prd.md`): `plan-architecture`, then a spike. Decisions and open questions are in `docs/brainstorm.md`, section 9. Parked for now: narrowing Tempo, chord progressions and a new UI. Width is part of the forest work. Harmony changes and a mobile app are parked too.
+- **Next and open:** the forest-of-sound epic (`docs/forest-of-sound.prd.md`), with its architecture in `docs/forest-of-sound.architecture.md`. The spike is built on the throwaway branch `forest-spike` (`npm run clips:forest` renders clips A–D), and the owner is listening to the clips. Next: tune the spike from those notes, or build the real test (`forest.html`). Decisions and open questions are in `docs/brainstorm.md`, section 9. Parked for now: narrowing Tempo, chord progressions and a new UI. Width is part of the forest work. Harmony changes and a mobile app are parked too.
 - **Still to do:** the listening checks in `docs/build-plan.md`. Only the owner can do those.
 
 ## Architecture map
@@ -32,7 +32,7 @@ docs/                 # design-thinking.md (why), build-plan.md (milestones), br
 
 ## Ground rules (conventions)
 
-- **"It can't sound bad"** is the core promise. Every setting combination should sound pleasant, and the defaults should sound good on the first Start.
+- **"It can't sound bad"** is the core promise: notes never clash. Scales, harmony and key changes are chosen so no setting combination gives clashing intervals, and the defaults sound good on the first Start.
 - **Keep the composer pure.** `src/music.js` decides which note and when, and is tested without audio. `src/audio.js` decides how it sounds.
 - **Measure, don't guess.** Volume matching, peak headroom and evenness are set by measurement, and the audio checks enforce them.
 - **Adding a sound:** add an entry to `SOUNDS` in `src/settings.js` and a recipe to `SOUND_RECIPES` in `src/audio.js`. Then set its gain so it matches Kalimba at the middle Tone. Check its evenness across MIDI 42–77, not just its average: Choir's first version averaged right but swung 23 dB from note to note. Check the worst-case peak too (limit 0.9).
